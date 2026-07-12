@@ -146,7 +146,9 @@ To make sustainability management as intuitive as managing revenue. EcoSphere en
 > Insert a full-width screenshot showcasing the EcoSphere landing page with the hero section, branding, and primary call-to-action.
 
 ```
-[HERO BANNER PLACEHOLDER]
+<img width="1600" height="722" alt="image" src="https://github.com/user-attachments/assets/72cd6d3d-f25c-486f-9098-2b764ea11fba" />
+
+
 ```
 
 ### Current Dashboard
@@ -154,7 +156,8 @@ To make sustainability management as intuitive as managing revenue. EcoSphere en
 > Insert a full-width screenshot showcasing the overall dashboard with KPI cards, ESG score, navigation sidebar, and analytics charts.
 
 ```
-[CURRENT DASHBOARD PLACEHOLDER]
+<img width="1600" height="718" alt="image" src="https://github.com/user-attachments/assets/ee5a3dcb-6187-4052-8a41-3a2c2dddaabb" />
+
 ```
 
 ### Overview Dashboard
@@ -162,7 +165,8 @@ To make sustainability management as intuitive as managing revenue. EcoSphere en
 > Insert a screenshot of the main overview page displaying the organizational ESG summary, recent activities, and quick-action panels.
 
 ```
-[OVERVIEW DASHBOARD PLACEHOLDER]
+<img width="1600" height="719" alt="image" src="https://github.com/user-attachments/assets/552a0ab9-5d67-41eb-9cf3-d4f5cf529840" />
+
 ```
 
 ### Environmental Module
@@ -170,7 +174,8 @@ To make sustainability management as intuitive as managing revenue. EcoSphere en
 > Insert a screenshot of the Environmental module showing carbon tracking charts, emission metrics, sustainability goal progress, and environmental KPI cards.
 
 ```
-[ENVIRONMENTAL MODULE PLACEHOLDER]
+<img width="1600" height="719" alt="image" src="https://github.com/user-attachments/assets/8975028a-f148-4ee9-9736-b6dcf284de00" />
+
 ```
 
 ### Social Module
@@ -178,7 +183,9 @@ To make sustainability management as intuitive as managing revenue. EcoSphere en
 > Insert a screenshot of the Social module displaying CSR activities, employee participation stats, diversity metrics, and training completion rates.
 
 ```
-[SOCIAL MODULE PLACEHOLDER]
+<img width="1600" height="720" alt="image" src="https://github.com/user-attachments/assets/d5e8e6c6-6888-4caa-bf6d-3c2ee69e04f1" />
+
+
 ```
 
 ### Governance Module
@@ -186,7 +193,9 @@ To make sustainability management as intuitive as managing revenue. EcoSphere en
 > Insert a screenshot of the Governance module showing ESG policies list, compliance tracking status, audit schedules, and compliance issue tracker.
 
 ```
-[GOVERNANCE MODULE PLACEHOLDER]
+<img width="1600" height="723" alt="image" src="https://github.com/user-attachments/assets/a917d365-1b14-4208-92be-fd487d11d838" />
+
+
 ```
 
 ### Department Dashboard
@@ -194,7 +203,9 @@ To make sustainability management as intuitive as managing revenue. EcoSphere en
 > Insert a screenshot of the Department Dashboard showing ESG scores per department, department ranking leaderboard, and department analytics charts.
 
 ```
-[DEPARTMENT DASHBOARD PLACEHOLDER]
+<img width="1600" height="719" alt="image" src="https://github.com/user-attachments/assets/31e1eeef-36e9-4f48-a705-612a4be4ff8f" />
+
+
 ```
 
 ### Reports
@@ -202,7 +213,9 @@ To make sustainability management as intuitive as managing revenue. EcoSphere en
 > Insert a screenshot of the Reports module displaying the report builder interface, available report templates, and export options (PDF/Excel).
 
 ```
-[REPORTS MODULE PLACEHOLDER]
+<img width="1600" height="718" alt="image" src="https://github.com/user-attachments/assets/23269cab-0cf8-45b7-a5f8-266449113f35" />
+
+
 ```
 
 ### Hive / Gamification
@@ -210,7 +223,9 @@ To make sustainability management as intuitive as managing revenue. EcoSphere en
 > Insert a screenshot of the Gamification (Hive) module showing the XP progress bar, earned badges, active challenges, rewards catalog, and leaderboards.
 
 ```
-[HIVE / GAMIFICATION PLACEHOLDER]
+<img width="1600" height="728" alt="image" src="https://github.com/user-attachments/assets/1abba1a0-5048-4290-9f1a-ca709c1e4ea5" />
+
+
 ```
 
 ### Settings
@@ -218,18 +233,10 @@ To make sustainability management as intuitive as managing revenue. EcoSphere en
 > Insert a screenshot of the Settings page showing organization configuration, ESG configuration panel, and notification preferences.
 
 ```
-[SETTINGS PLACEHOLDER]
-```
+<img width="1600" height="721" alt="image" src="https://github.com/user-attachments/assets/85689207-200b-4c21-b1dc-5ab515bc1a33" />
 
-### Mobile View
-
-> Insert a screenshot showcasing the responsive mobile layout of the EcoSphere dashboard on a mobile device.
 
 ```
-[MOBILE VIEW PLACEHOLDER]
-```
-
----
 
 ## Architecture
 
@@ -360,17 +367,6 @@ ecosphere/
 
 ---
 
-## UI Redesign
-
-> The images below represent the design direction of the final interface. The redesign is currently in progress and the production UI will closely resemble the following concept designs.
-
-### Upcoming UI Preview
-
-> Insert a full-width screenshot showcasing the redesigned dashboard concept with the new premium design system, improved data visualization, modern card layouts, and enhanced navigation.
-
-```
-[UPCOMING UI PREVIEW PLACEHOLDER]
-```
 
 ### What's Changing
 
@@ -434,41 +430,6 @@ npm install
 npm run dev
 ```
 
-### Code of Conduct
-
-Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before contributing. We are committed to providing a welcoming and inclusive experience for everyone.
-
----
-
-## License
-
-This project is licensed under the **MIT License**.
-
-```
-MIT License
-
-Copyright (c) 2026 EcoSphere Contributors
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
----
 
 ## Authors
 
@@ -476,9 +437,9 @@ SOFTWARE.
 
 | Name | Role | GitHub |
 |------|------|--------|
-| [Author Name] | [Role/Position] | [@username](https://github.com/username) |
-| [Author Name] | [Role/Position] | [@username](https://github.com/username) |
-| [Author Name] | [Role/Position] | [@username](https://github.com/username) |
+| [Vikas V] | [Fullstack Developer] | [@vikasV-dev7](https://github.com/vikasV-dev7) |
+| [Tevin Tomas Johnson] | [Presenter,Fullstack & Debugger] | [@tevin-johnson](https://github.com/tevin-johnson) |
+| [Rosahn R] | [UI/UX developer,Frontend & tester] | [@Roshan279](https://github.com/Roshan279) |
 
 ---
 

@@ -49,6 +49,8 @@ model Employee {
   badges                 EmployeeBadge[]
   redemptions            RewardRedemption[]
   policyAcknowledgements PolicyAcknowledgement[]
+
+  @@index([departmentId])
 }
 
 model Category {
@@ -89,6 +91,8 @@ model CarbonTransaction {
   createdAt        DateTime       @default(now())
   department       Department     @relation(fields: [departmentId], references: [id])
   emissionFactor   EmissionFactor @relation(fields: [emissionFactorId], references: [id])
+
+  @@index([date])
 }
 
 model Goal {
@@ -228,6 +232,8 @@ model Notification {
   read      Boolean  @default(false)
   data      String?  @db.Text // JSON metadata
   createdAt DateTime @default(now())
+
+  @@index([employeeId])
 }
 
 model ESGConfig {
@@ -254,6 +260,8 @@ model DepartmentScore {
   carbonTotal        Float    @default(0)
   createdAt          DateTime @default(now())
   breakdowns         ScoreBreakdown[]
+
+  @@index([period])
 }
 
 model Policy {
@@ -309,6 +317,8 @@ model ComplianceIssue {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   audit       Audit    @relation(fields: [auditId], references: [id])
+
+  @@index([dueDate])
 }
 
 model ScoreBreakdown {
@@ -339,4 +349,15 @@ model SavedReport {
   createdAt   DateTime @default(now())
 
   @@map("saved_reports")
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  endpoint  String
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@map("push_subscriptions")
 }

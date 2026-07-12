@@ -3,6 +3,7 @@
 import React from 'react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
+import { BottomNav } from '@/components/layout/bottom-nav';
 import { useGovernanceStore } from '@/stores/use-governance-store';
 
 export default function DashboardLayout({
@@ -21,19 +22,26 @@ export default function DashboardLayout({
   }, [checkOverdueIssues]);
 
   return (
-    <div className="min-h-screen bg-[#fff9e6] text-[#1e1c11] antialiased">
-      {/* Sidebar navigation */}
-      <Sidebar />
+    <div className="min-h-screen bg-[#fff9e6] dark:bg-[#0F172A] text-[#1e1c11] dark:text-[#F8FAFC] antialiased flex flex-col md:flex-row">
+      {/* Desktop Sidebar navigation */}
+      <div className="hidden md:block">
+        <Sidebar />
+      </div>
 
       {/* Main layout wrapper */}
-      <div className="pl-64">
+      <div className="md:pl-64 flex-1 flex flex-col min-h-screen w-full">
         {/* Top Navbar */}
         <Header />
 
         {/* Dynamic page contents */}
-        <main className="min-h-[calc(100vh-4rem)] mt-16 p-8">
+        <main className="flex-1 mt-16 p-4 md:p-8 pb-20 md:pb-8 overflow-auto">
           {children}
         </main>
+
+        {/* Mobile Bottom Navigation */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
+          <BottomNav />
+        </div>
       </div>
     </div>
   );

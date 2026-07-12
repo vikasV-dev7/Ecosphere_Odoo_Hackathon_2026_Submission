@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>EcoSphere — Social</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FBF5DE; --surface:#EAF3E1; --surface-warm:#FFF3DC; --surface-warm2:#FFF8E9;
+    --border:#D9E4CB; --border-warm:#E8C878;
+    --text:#20301D; --text-muted:#5C6B54; --text-faint:#8E9982;
+    --env:#3C8A34; --env-strong:#0D530E; --soc:#2C7A87; --soc-strong:#1B5A62; --gov:#B23A6B;
+    --gold:#D9A430; --gold-bright:#FFDF82; --gold-dim:#D9A4301C;
+    --bloom:#F76FA6; --bloom-soft:#FBB4CE; --bloom-dim:#F76FA61C; --bloom-deep:#C6437F;
+    --danger:#C2483A; --ink:#20301D;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:'Inter', sans-serif; font-size:14px; }
+  .disp{ font-family:'Space Grotesk', sans-serif; font-weight:600; }
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+  svg.crisp{ image-rendering:pixelated; shape-rendering:crispEdges; }
+
+  .app{ display:grid; grid-template-columns:220px 1fr 260px; position:relative; }
+
+  /* shared card language: rounded, but with a visible border + a flat offset shadow */
+  .card{ position:relative; background:var(--surface); border:1.5px solid var(--border); border-radius:10px;
+    box-shadow:3px 3px 0 rgba(34,51,31,0.08); transition:transform .18s ease, box-shadow .18s ease; }
+  .card:hover{ transform:translate(-1px,-3px); box-shadow:5px 6px 0 rgba(34,51,31,0.10); }
+  .card-warm{ position:relative; background:linear-gradient(120deg, var(--surface-warm), var(--surface-warm2), var(--surface-warm));
+    border:1.5px solid var(--border-warm); border-radius:10px; box-shadow:3px 3px 0 rgba(190,138,46,0.14); }
+  .card-warm.bloom{ background:linear-gradient(120deg, #FFEAF2, var(--surface-warm2), #FFEAF2); border-color:var(--bloom-soft); box-shadow:3px 3px 0 rgba(247,111,166,0.18); }
+
+  /* KPI category accent */
+  .kpi.env{ border-top:3px solid var(--env); }
+  .kpi.soc{ border-top:3px solid var(--soc); }
+  .kpi.gov{ border-top:3px solid var(--gov); }
+
+  /* ---------- DECORATION LAYER: pixel trees & vines ---------- */
+  .decor{ position:absolute; pointer-events:none; z-index:0; }
+  .sidebar, .dock, .hero, .main{ position:relative; }
+  .sidebar > *:not(.decor), .dock > *:not(.decor), .hero > *:not(.decor){ position:relative; z-index:1; }
+  .main-watermark{ position:absolute; top:60px; left:50%; transform:translateX(-50%); opacity:.045; z-index:0; pointer-events:none; }
+
+  /* SIDEBAR */
+  .sidebar{ padding:20px 14px; border-right:1px solid var(--border); display:flex; flex-direction:column; gap:2px; overflow:hidden; }
+  .logo{ display:flex; align-items:center; gap:8px; padding:6px 10px 22px; opacity:0; animation:riseIn .3s ease-out forwards; }
+  .logo-mark{ width:24px; height:24px; border-radius:7px; background:linear-gradient(135deg, var(--env), var(--soc)); }
+  .logo span{ font-size:16px; }
+  .nav-item{ display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:8px; cursor:pointer; color:var(--text-muted); font-weight:500;
+    position:relative; opacity:0; transform:translateY(8px); animation:riseIn .25s ease-out forwards; }
+  .nav-item::before{ content:''; position:absolute; left:-14px; top:6px; bottom:6px; width:0; background:var(--env); border-radius:0 4px 4px 0; transition:width .18s ease; }
+  .nav-item:hover, .nav-item.active{ background:var(--surface); color:var(--text); }
+  .nav-item:hover::before, .nav-item.active::before{ width:3px; }
+  .nav-item svg{ flex:none; }
+  .nav-item:nth-child(2){animation-delay:.03s;} .nav-item:nth-child(3){animation-delay:.06s;}
+  .nav-item:nth-child(4){animation-delay:.09s;} .nav-item:nth-child(5){animation-delay:.12s;}
+  .nav-item:nth-child(6){animation-delay:.15s;} .nav-item:nth-child(7){animation-delay:.18s;}
+  .nav-item:nth-child(8){animation-delay:.21s;} .nav-item:nth-child(9){animation-delay:.24s;}
+  @keyframes riseIn{ to{ opacity:1; transform:translateY(0); } }
+
+  /* MAIN */
+  .main{ padding:20px 26px 40px; overflow:hidden; }
+  .topbar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; opacity:0; animation:fadeIn .25s ease-out .08s forwards; }
+  @keyframes fadeIn{ to{opacity:1;} }
+  .crumb{ display:flex; align-items:center; gap:6px; color:var(--text-muted); font-size:13px; }
+  .crumb b{ color:var(--text); }
+  .search{ display:flex; align-items:center; gap:8px; border:1.5px solid var(--border); border-radius:8px; padding:8px 12px; width:220px; color:var(--text-faint); font-size:13px; }
+  .topbar-right{ display:flex; align-items:center; gap:14px; }
+  .xp-pill{ display:flex; align-items:center; gap:6px; background:var(--gold-dim); border:1.5px solid var(--border-warm); border-radius:999px; padding:6px 12px 6px 6px; cursor:pointer; animation:glowPulse 2.4s ease-out 1; }
+  .xp-lvl{ width:22px; height:22px; border-radius:999px; background:var(--gold); display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; color:#fff; }
+  .xp-star{ color:var(--bloom); font-size:11px; }
+  @keyframes glowPulse{ 0%{ box-shadow:0 0 0 0 rgba(190,138,46,.45);} 70%{ box-shadow:0 0 0 12px rgba(190,138,46,0);} 100%{ box-shadow:0 0 0 0 rgba(190,138,46,0);} }
+  .avatar{ width:32px; height:32px; border-radius:999px; background:var(--surface); border:1.5px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; }
+
+  /* HERO */
+  .hero{ display:flex; align-items:center; gap:26px; padding:22px; margin-bottom:20px; opacity:0; transform:scale(.97); animation:heroIn .4s cubic-bezier(.2,1,.3,1) .12s forwards; overflow:hidden; }
+  @keyframes heroIn{ to{ opacity:1; transform:scale(1); } }
+  .bee-wrap{ flex:none; animation:beeFloat 2.8s ease-in-out infinite; }
+  @keyframes beeFloat{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-5px);} }
+  /* social hero: radial gauge for composite + a vertical stack of pillar rings, instead of overview's row or environmental's 2x2 grid */
+  .constellation{ display:flex; align-items:center; gap:30px; flex:1; }
+  .gauge-wrap{ flex:none; position:relative; width:150px; height:150px; }
+  .gauge-wrap svg{ position:absolute; inset:0; }
+  .gauge-wrap .num{ font-family:'Press Start 2P'; font-size:22px; }
+  .gauge-wrap .lbl{ font-size:10px; letter-spacing:1px; color:var(--text-faint); text-transform:uppercase; margin-top:6px; }
+  .gauge-center{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  .mini-rings{ flex:1; display:flex; flex-direction:column; gap:14px; border-left:1.5px dashed var(--border-warm); padding-left:26px; }
+  .mini-ring-row{ display:flex; align-items:center; gap:12px; }
+  .mini-ring-row .mlbl{ width:96px; font-size:12.5px; color:var(--text-muted); flex:none; }
+  .mini-ring-row .ring-track{ height:8px; border-radius:999px; background:var(--border); flex:1; display:flex; gap:2px; padding:1px; overflow:hidden; }
+  .mini-ring-row .mval{ width:26px; text-align:right; font-family:'IBM Plex Mono'; font-size:12.5px; flex:none; }
+  .ring-seg{ flex:1; background:transparent; border-radius:2px; }
+  .ring-seg.on{ animation:segLight .12s linear forwards; }
+  @keyframes segLight{ from{ transform:scaleY(0);} to{ transform:scaleY(1);} }
+
+  /* KPI: a "spotlight" row — one large featured metric + three stacked stats, instead of a grid or a strip */
+  .kpi-row{ display:grid; grid-template-columns:1.3fr 1fr; gap:16px; margin-bottom:20px;
+    opacity:0; transform:translateY(8px); animation:riseIn .3s ease-out .26s forwards; }
+  .kpi-spotlight{ display:flex; align-items:center; gap:20px; padding:20px 24px; }
+  .kpi-spotlight .sp-ring{ position:relative; width:84px; height:84px; flex:none; }
+  .kpi-spotlight .sp-ring svg{ position:absolute; inset:0; }
+  .kpi-spotlight .sp-ring .v{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'Press Start 2P'; font-size:15px; }
+  .kpi-spotlight .sp-text .lbl{ font-size:11.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.4px; margin-bottom:6px; }
+  .kpi-spotlight .sp-text .val{ font-family:'Space Grotesk'; font-weight:700; font-size:22px; }
+  .kpi-spotlight .sp-text .delta{ font-size:12.5px; margin-top:4px; }
+  .kpi-stack{ display:flex; flex-direction:column; }
+  .kpi-stack .kpi{ flex:1; display:flex; align-items:center; justify-content:space-between; padding:0 20px; border-top:1px solid var(--border); }
+  .kpi-stack .kpi:first-child{ border-top:none; }
+  .kpi-stack .kpi .lbl{ font-size:12px; color:var(--text-muted); }
+  .kpi-stack .kpi .val{ font-family:'IBM Plex Mono'; font-size:15px; font-weight:600; }
+
+  .trend-full{ margin-bottom:20px; }
+  .row3{ display:grid; grid-template-columns:1fr 1.05fr 1fr; gap:16px; margin-bottom:20px; align-items:stretch; }
+  .section-title{ font-size:14px; margin-bottom:12px; display:flex; align-items:center; gap:7px; }
+  .section-sub{ font-size:11.5px; color:var(--text-faint); margin:-6px 0 12px; }
+  .legend{ display:flex; gap:16px; font-size:12px; color:var(--text-muted); margin-bottom:10px; flex-wrap:wrap; }
+  .legend span{ display:inline-flex; align-items:center; gap:5px; }
+  .legend i{ width:12px; height:3px; border-radius:2px; display:inline-block; }
+  .legend i.dot{ width:8px; height:8px; border-radius:999px; }
+
+  /* ---------- CSR story strip: horizontal scroll, distinct from any list used elsewhere ---------- */
+  .story-strip{ display:flex; gap:14px; overflow-x:auto; padding:4px 4px 10px; margin-bottom:20px; scroll-snap-type:x proximity; }
+  .story-strip::-webkit-scrollbar{ height:7px; }
+  .story-strip::-webkit-scrollbar-thumb{ background:var(--border-warm); border-radius:999px; }
+  .story-card{ flex:none; width:180px; scroll-snap-align:start; padding:14px; display:flex; flex-direction:column; gap:8px; }
+  .story-card .stile{ width:100%; height:64px; border-radius:8px; display:flex; align-items:center; justify-content:center; }
+  .story-card .sname{ font-weight:600; font-size:13px; }
+  .story-card .sxp{ font-family:'IBM Plex Mono'; font-size:11.5px; color:var(--gold); }
+  .story-card .smeta{ font-size:11px; color:var(--text-faint); display:flex; justify-content:space-between; }
+
+  .lb-row{ display:flex; align-items:center; gap:8px; margin-bottom:12px; font-size:12.5px; }
+  .lb-rank{ width:16px; text-align:center; color:var(--text-faint); font-family:'IBM Plex Mono'; }
+  .lb-name{ flex:1; }
+  .lb-track{ width:70px; height:6px; border-radius:999px; background:var(--border); overflow:hidden; }
+  .lb-fill{ height:100%; width:0; border-radius:999px; transition:width .8s cubic-bezier(.2,1,.3,1); }
+  .lb-score{ font-family:'IBM Plex Mono'; width:24px; text-align:right; }
+
+  /* ---------- training completion bars ---------- */
+  .train-row{ display:flex; align-items:center; gap:10px; margin-bottom:13px; font-size:12.5px; }
+  .train-row .tname{ width:110px; flex:none; color:var(--text-muted); }
+  .train-row .ttrack{ flex:1; height:9px; border-radius:999px; background:var(--border); overflow:hidden; }
+  .train-row .tfill{ height:100%; width:0; border-radius:999px; transition:width .9s cubic-bezier(.2,1,.3,1); }
+  .train-row .tpct{ width:32px; text-align:right; font-family:'IBM Plex Mono'; }
+
+  .activity{ padding:18px; margin-bottom:20px; }
+  .act-row{ display:flex; align-items:center; gap:10px; padding:10px 2px; border-top:1px solid var(--border); font-size:12.5px; }
+  .act-row:first-of-type{ border-top:none; }
+  .act-avatar{ width:26px; height:26px; border-radius:999px; background:var(--border); display:flex; align-items:center; justify-content:center; font-size:12px; flex:none; }
+  .act-dot{ width:7px; height:7px; border-radius:999px; flex:none; }
+  .act-text{ flex:1; color:var(--text-muted); }
+  .act-text b{ color:var(--text); font-weight:500; }
+  .act-xp{ font-family:'IBM Plex Mono'; font-size:12.5px; color:var(--gold); }
+  .act-time{ font-size:11px; color:var(--text-faint); width:50px; text-align:right; }
+
+  /* DONUT */
+  .donut-card{ padding:18px; display:flex; flex-direction:column; }
+  .donut-row{ display:flex; flex-direction:column; align-items:center; gap:14px; flex:1; }
+  .donut-legend{ display:flex; flex-direction:column; gap:7px; width:100%; }
+  .donut-legend-item{ display:flex; align-items:center; gap:8px; font-size:12px; }
+  .donut-legend-item .dot{ width:9px; height:9px; border-radius:3px; flex:none; }
+  .donut-legend-item .dname{ flex:1; color:var(--text-muted); }
+  .donut-legend-item .dpct{ font-family:'IBM Plex Mono'; }
+  .donut-center-lbl{ font-size:10px; fill:var(--text-faint); font-family:'Inter'; }
+  .donut-center-val{ font-family:'Press Start 2P'; font-size:13px; fill:var(--text); }
+
+  /* DOCK */
+  .dock{ padding:20px 16px; border-left:1px solid var(--border); display:flex; flex-direction:column; gap:14px; overflow:hidden; }
+  .dock h3{ font-size:12px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-faint); margin:4px 0 10px; }
+  .warm-inner{ padding:14px 16px; }
+  .level-row{ display:flex; justify-content:space-between; align-items:center; font-size:13px; margin-bottom:10px; }
+  .level-row b{ font-family:'Press Start 2P'; font-size:11px; font-weight:400; }
+  .xp-bar{ height:7px; border-radius:999px; background:rgba(0,0,0,0.08); overflow:hidden; }
+  .xp-fill{ height:100%; border-radius:999px; background:linear-gradient(90deg, var(--gold), var(--env)); width:0%; transition:width 1s ease-out; }
+  .xp-nums{ display:flex; justify-content:space-between; font-family:'IBM Plex Mono'; font-size:11.5px; margin-top:6px; color:var(--text-muted); }
+
+  .streak-card{ display:flex; align-items:center; gap:10px; }
+  .flame{ font-size:20px; animation:flicker 1.6s ease-in-out infinite; filter:drop-shadow(0 0 3px var(--bloom-soft)); }
+  @keyframes flicker{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.1);} }
+  .streak-num{ font-family:'IBM Plex Mono'; font-size:16px; font-weight:600; color:var(--bloom-deep); }
+  .streak-sub{ font-size:11px; color:var(--text-faint); }
+
+  .wallet-row{ display:flex; align-items:center; gap:8px; padding:6px 0; font-size:12.5px; }
+  .wallet-icon{ width:12px; height:12px; border-radius:3px; flex:none; }
+  .wallet-val{ margin-left:auto; font-family:'IBM Plex Mono'; }
+
+
+  .quest-bar{ height:7px; border-radius:999px; background:rgba(0,0,0,0.08); margin-top:8px; overflow:hidden; }
+  .quest-fill{ height:100%; border-radius:999px; background:var(--env); width:0%; transition:width 1s ease-out; }
+  .quest-reward{ font-family:'IBM Plex Mono'; font-size:12px; color:var(--gold); margin-top:8px; }
+
+  /* ============ FUNCTIONALITY LAYER: focus, motion, dropdowns, toast, skeleton ============ */
+  :focus-visible{ outline:2px solid var(--env); outline-offset:2px; border-radius:4px; }
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; scroll-behavior:auto !important; }
+  }
+  .skip-link{ position:absolute; left:-999px; top:0; background:var(--ink); color:#fff; padding:10px 16px; border-radius:0 0 8px 0; z-index:200; font-size:13px; }
+  .skip-link:focus{ left:0; }
+
+  .icon-btn{ position:relative; width:32px; height:32px; border:none; background:transparent; border-radius:8px;
+    display:flex; align-items:center; justify-content:center; color:var(--text); cursor:pointer; padding:0; }
+  .icon-btn:hover{ background:var(--surface); }
+  .icon-btn:active{ transform:scale(.94); }
+  .notif-dot{ position:absolute; top:1px; right:1px; min-width:14px; height:14px; padding:0 3px; border-radius:999px;
+    background:var(--gov); color:#fff; font-size:9px; font-weight:700; display:flex; align-items:center; justify-content:center; line-height:1; }
+  .notif-dot.hidden{ display:none; }
+
+  .dropdown-wrap{ position:relative; }
+  .dropdown-panel{ position:absolute; top:calc(100% + 10px); right:0; width:300px; background:var(--surface);
+    border:1.5px solid var(--border); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.14); padding:8px; z-index:60;
+    opacity:0; transform:translateY(-6px); pointer-events:none; transition:opacity .15s ease, transform .15s ease; }
+  .dropdown-panel.open{ opacity:1; transform:translateY(0); pointer-events:auto; }
+  .dropdown-panel h4{ font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-faint); margin:6px 8px 8px; }
+  .notif-item{ display:flex; gap:8px; padding:8px; border-radius:8px; cursor:pointer; align-items:flex-start; }
+  .notif-item:hover, .notif-item:focus-visible{ background:var(--bg); }
+  .notif-item .dot{ width:7px; height:7px; border-radius:999px; background:var(--env); flex:none; margin-top:5px; }
+  .notif-item.read .dot{ background:var(--border); }
+  .notif-item .body{ flex:1; font-size:12.5px; line-height:1.4; }
+  .notif-item .body b{ display:block; color:var(--text); font-weight:600; }
+  .notif-item .body span{ color:var(--text-muted); }
+  .notif-item .time{ font-size:10.5px; color:var(--text-faint); white-space:nowrap; }
+  .dropdown-footer{ display:flex; justify-content:space-between; padding:8px 6px 4px; border-top:1px solid var(--border); margin-top:4px; }
+  .link-btn{ background:none; border:none; color:var(--env-strong); font-size:12px; font-weight:600; cursor:pointer; padding:2px; }
+  .link-btn:hover, .link-btn:focus-visible{ text-decoration:underline; }
+  .dropdown-item{ display:block; width:100%; text-align:left; padding:9px 10px; border-radius:8px; color:var(--text);
+    text-decoration:none; font-size:13px; cursor:pointer; background:none; border:none; font-family:inherit; }
+  .dropdown-item:hover, .dropdown-item:focus-visible{ background:var(--bg); }
+
+  .avatar{ border:1.5px solid var(--border); cursor:pointer; padding:0; font-family:inherit; }
+  .avatar:hover, .avatar:focus-visible{ box-shadow:0 0 0 3px var(--gold-dim); }
+  .avatar:active{ transform:scale(.95); }
+
+  .search{ cursor:text; }
+  .search:hover, .search:focus-within{ border-color:var(--border-warm); }
+  .search .kbd{ margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--text-faint);
+    border:1px solid var(--border); border-radius:4px; padding:1px 5px; }
+
+  .toast-stack{ position:fixed; bottom:20px; right:20px; display:flex; flex-direction:column; gap:8px; z-index:100; max-width:280px; }
+  .toast{ background:var(--ink); color:#fff; padding:11px 16px; border-radius:8px; font-size:12.5px; box-shadow:0 8px 20px rgba(0,0,0,.24);
+    opacity:0; transform:translateY(8px); transition:opacity .2s ease, transform .2s ease; }
+  .toast.show{ opacity:1; transform:translateY(0); }
+
+  button{ font-family:inherit; }
+  .badge:focus-visible, .kpi:focus-visible, .lb-row:focus-visible{ outline:2px solid var(--env); outline-offset:2px; border-radius:6px; }
+
+  .lb-row, .act-row, .kpi, .btn{ cursor:pointer; }
+  .lb-row:hover, .act-row:hover{ background:var(--bg); border-radius:6px; }
+  .btn:hover, .btn:focus-visible{ filter:brightness(1.05); }
+  .btn:active{ transform:scale(.97); }
+
+  .role-switcher{ display:flex; align-items:center; gap:6px; border:1.5px solid var(--border); border-radius:8px; background:var(--surface);
+    padding:7px 11px; font-size:12.5px; cursor:pointer; color:var(--text); }
+  .role-switcher:hover{ border-color:var(--border-warm); }
+  .role-switcher .rs-lbl{ color:var(--text-faint); }
+  .role-switcher .rs-val{ font-weight:600; }
+  .role-switcher .rs-caret{ color:var(--text-faint); font-size:10px; }
+
+  .hive-teaser{ padding:14px; cursor:pointer; }
+  .hive-teaser .ht-row{ display:flex; align-items:center; gap:10px; margin-bottom:4px; }
+  .hive-teaser .ht-icon{ width:30px; height:30px; border-radius:8px; background:var(--gold-dim); border:1.5px solid var(--border-warm);
+    display:flex; align-items:center; justify-content:center; font-size:15px; flex:none; }
+  .hive-teaser .ht-title{ font-weight:700; font-size:13px; }
+  .hive-teaser .ht-sub{ font-size:11.5px; color:var(--text-muted); margin:6px 0 10px; }
+  .hive-teaser .ht-link{ font-size:11.5px; font-weight:600; color:var(--gold-dark, var(--gold)); display:flex; align-items:center; gap:4px; }
+
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
+<div class="app">
+  <nav class="sidebar" aria-label="Primary">
+    <svg class="decor crisp" id="side-vine" style="right:2px; top:0;"></svg>
+    <svg class="decor crisp" id="side-tree" style="left:6px; bottom:0;"></svg>
+    <svg class="decor crisp" id="bloom-side" style="left:70px; bottom:2px; filter:drop-shadow(1px 2px 0 rgba(32,48,29,.12));"></svg>
+    <div class="logo"><div class="logo-mark"></div><span class="disp">EcoSphere</span></div>
+    <div class="nav-item" tabindex="0" role="link"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8L8 2l6 6M4 7v6h8V7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Overview</div>
+    <div class="nav-item" tabindex="0" role="link"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 14V6M8 6C8 3 6 2 3 2c0 4 2 5 5 5zM8 8c0-3 2-4 5-4 0 4-2 5-5 5" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>Environmental</div>
+    <div class="nav-item active" tabindex="0" role="link" aria-current="page"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="2.4" stroke="currentColor" stroke-width="1.4"/><path d="M3 14c0-3 2-5 5-5s5 2 5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>Social</div>
+    <div class="nav-item" tabindex="0" role="link"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2l5 2v4c0 3.5-2.2 5.7-5 6.5-2.8-.8-5-3-5-6.5V4l5-2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>Governance</div>
+    <div class="nav-item" tabindex="0" role="link"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2l1.6 3.8L14 6.4l-3 2.7.8 4.1L8 11.2 4.2 13.2 5 9.1 2 6.4l4.4-.6L8 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>The Hive</div>
+    <div class="nav-item" tabindex="0" role="link"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="8" width="2.5" height="6" stroke="currentColor" stroke-width="1.2"/><rect x="6.8" y="5" width="2.5" height="9" stroke="currentColor" stroke-width="1.2"/><rect x="11.5" y="2" width="2.5" height="12" stroke="currentColor" stroke-width="1.2"/></svg>Reports</div>
+    <div class="nav-item" tabindex="0" role="link"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>Department Perf</div>
+    <div class="nav-item" tabindex="0" role="link"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M8 2v2M8 12v2M14 8h-2M4 8H2M12.2 3.8l-1.4 1.4M5.2 10.8l-1.4 1.4M12.2 12.2l-1.4-1.4M5.2 5.2L3.8 3.8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Platform Settings</div>
+  </nav>
+
+  <main class="main" id="main-content">
+    <svg class="main-watermark crisp" id="main-tree"></svg>
+
+    <div class="topbar">
+      <div class="crumb">Nimbus Retail Pvt Ltd <span>›</span> <b>Social</b></div>
+      <div class="topbar-right">
+        <div class="search" tabindex="0" role="button" aria-label="Open search"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.4"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>Search people, activities…<span class="kbd">⌘K</span></div>
+        <div class="dropdown-wrap">
+          <button class="icon-btn" id="notif-btn" aria-haspopup="true" aria-expanded="false" aria-label="Notifications, 3 unread">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M4 12V7a4 4 0 018 0v5l1.2 1.6H2.8L4 12z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6.5 14.5a1.5 1.5 0 003 0" stroke="currentColor" stroke-width="1.3"/></svg>
+            <span class="notif-dot" id="notif-dot">3</span>
+          </button>
+          <div class="dropdown-panel" id="notif-panel" role="menu" aria-hidden="true">
+            <h4>Notifications</h4>
+            <div id="notif-list"></div>
+            <div class="dropdown-footer"><button class="link-btn" id="notif-mark-all">Mark all as read</button><button class="link-btn">View all</button></div>
+          </div>
+        </div>
+        <div class="xp-pill" tabindex="0" role="button" aria-label="Level 14, 2340 experience points"><div class="xp-lvl">14</div><span class="mono" style="font-size:12.5px;">2,340 XP</span><span class="xp-star">★</span></div>
+        <div class="dropdown-wrap">
+          <button class="role-switcher" id="role-btn" aria-haspopup="true" aria-expanded="false" aria-label="Role switcher, currently Admin">
+            <span class="rs-lbl">Role:</span><span class="rs-val" id="role-val">Admin</span><span class="rs-caret">▾</span>
+          </button>
+          <div class="dropdown-panel" id="role-panel" role="menu" aria-hidden="true" style="width:170px;">
+            <button class="dropdown-item" role="menuitem" data-role="Admin">Admin</button>
+            <button class="dropdown-item" role="menuitem" data-role="Manager">Manager</button>
+            <button class="dropdown-item" role="menuitem" data-role="Employee">Employee</button>
+          </div>
+        </div>
+        <div class="dropdown-wrap">
+          <button class="avatar" id="avatar-btn" aria-haspopup="true" aria-expanded="false" aria-label="Open user menu for Aditya K.">AK</button>
+          <div class="dropdown-panel" id="user-panel" role="menu" aria-hidden="true" style="width:180px;">
+            <button class="dropdown-item" role="menuitem">Profile</button>
+            <button class="dropdown-item" role="menuitem">Settings</button>
+            <button class="dropdown-item" role="menuitem">Log out</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero card">
+      <svg class="decor crisp" id="hero-vine-l" style="left:14px; top:6px;"></svg>
+      <svg class="decor crisp" id="hero-vine-r" style="right:14px; top:6px; transform:scaleX(-1);"></svg>
+      <svg class="decor crisp" id="hero-tree" style="right:8px; bottom:-6px; opacity:.16;"></svg>
+      <svg class="decor crisp" id="bloom-hero" style="left:2px; bottom:-4px; filter:drop-shadow(1px 2px 0 rgba(32,48,29,.10));"></svg>
+      <div class="bee-wrap"><svg class="crisp" id="bee-svg" width="120" height="140" viewBox="0 0 17 19"></svg></div>
+      <div class="constellation">
+        <div class="gauge-wrap">
+          <svg width="150" height="150" viewBox="0 0 150 150" id="gauge-svg"></svg>
+          <div class="gauge-center"><div class="num" id="composite-score">0</div><div class="lbl">social score</div></div>
+        </div>
+        <div class="mini-rings">
+          <div class="mini-ring-row"><span class="mlbl">Engagement</span><div class="ring-track" id="engage-track"></div><span class="mval mono">74</span></div>
+          <div class="mini-ring-row"><span class="mlbl">Diversity & inclusion</span><div class="ring-track" id="dei-track"></div><span class="mval mono">65</span></div>
+          <div class="mini-ring-row"><span class="mlbl">Wellbeing</span><div class="ring-track" id="well-track"></div><span class="mval mono">63</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi-spotlight card">
+        <div class="sp-ring"><svg width="84" height="84" viewBox="0 0 84 84" id="sp-gauge"></svg><div class="v" style="position:absolute;">73%</div></div>
+        <div class="sp-text">
+          <div class="lbl">Participation rate</div>
+          <div class="val">73% of employees</div>
+          <div class="delta" style="color:var(--soc-strong)">Need 27 more to hit target</div>
+        </div>
+      </div>
+      <div class="kpi-stack card">
+        <div class="kpi"><span class="lbl">CSR events this quarter</span><span class="val">12</span></div>
+        <div class="kpi"><span class="lbl">Avg activity rating</span><span class="val">4.2 / 5</span></div>
+        <div class="kpi"><span class="lbl">Pending approvals</span><span class="val" style="color:var(--danger);">5</span></div>
+      </div>
+    </div>
+
+    <div class="section-title disp" style="margin-bottom:10px;"><svg class="crisp" width="12" height="12" viewBox="0 0 9 9" id="leaf-1"></svg>Recent CSR activities</div>
+    <div class="story-strip" id="story-strip"></div>
+
+    <div class="row3">
+      <div class="card donut-card">
+        <div class="section-title disp"><svg class="crisp" width="12" height="12" viewBox="0 0 9 9" id="leaf-2"></svg>Workforce diversity</div>
+        <div class="donut-row">
+          <svg width="120" height="120" viewBox="0 0 120 120" id="donut-svg"></svg>
+          <div class="donut-legend" id="donut-legend"></div>
+        </div>
+      </div>
+      <div class="card" style="padding:18px;">
+        <div class="section-title disp"><svg class="crisp" width="12" height="12" viewBox="0 0 9 9" id="leaf-3"></svg>Training completion</div>
+        <div class="section-sub">Share of employees who completed each module</div>
+        <div id="train-list"></div>
+      </div>
+      <div class="card" style="padding:18px;">
+        <div class="section-title disp" style="justify-content:space-between;">
+          <span style="display:flex; align-items:center; gap:7px;"><svg class="crisp" width="12" height="12" viewBox="0 0 9 9" id="leaf-4"></svg>Top participation</span>
+          <span id="dept-view-all" tabindex="0" role="link" style="font-size:11.5px; font-weight:600; color:var(--soc); cursor:pointer;">View all 12 →</span>
+        </div>
+        <div id="lb-list"></div>
+      </div>
+    </div>
+
+    <div class="activity card">
+      <div class="section-title disp"><svg class="crisp" width="12" height="12" viewBox="0 0 9 9" id="leaf-5"></svg>Recent approvals</div>
+      <div id="activity-list"></div>
+    </div>
+
+  </main>
+
+  <aside class="dock" aria-label="Player status">
+    <svg class="decor crisp" id="dock-vine" style="left:2px; top:0;"></svg>
+    <svg class="decor crisp" id="dock-tree" style="right:8px; bottom:0;"></svg>
+    <svg class="decor crisp" id="bloom-dock" style="right:78px; bottom:2px; filter:drop-shadow(1px 2px 0 rgba(32,48,29,.12));"></svg>
+
+    <div class="card-warm warm-inner">
+      <div class="level-row"><b>PARTICIPATION 2026</b></div>
+      <div class="xp-bar"><div class="xp-fill" id="target-fill"></div></div>
+      <div class="xp-nums"><span>73% participation</span><span>Goal: 90%</span></div>
+    </div>
+
+    <div class="card-warm bloom warm-inner streak-card">
+      <span class="flame">🔥</span>
+      <div><div class="streak-num">18-day streak</div><div class="streak-sub">Employees logging activity daily</div></div>
+    </div>
+
+    <div class="card" style="padding:14px;">
+      <h3>Community wallet</h3>
+      <div class="wallet-row"><span class="wallet-icon" style="background:var(--soc);"></span>Volunteer hours<span class="wallet-val">3,120</span></div>
+      <div class="wallet-row"><span class="wallet-icon" style="background:var(--env);"></span>Trees / kits donated<span class="wallet-val">840</span></div>
+      <div class="wallet-row"><span class="wallet-icon" style="background:var(--gold);"></span>Blood units collected<span class="wallet-val">96</span></div>
+      <div class="wallet-row"><span class="wallet-icon" style="background:var(--gov);"></span>Meals distributed<span class="wallet-val">1,450</span></div>
+    </div>
+
+    <div class="card hive-teaser" id="hive-teaser" tabindex="0" role="button" aria-label="Open The Hive for badges and quests">
+      <div class="ht-row"><div class="ht-icon">🏅</div><div><div class="ht-title">4 of 12 badges earned</div></div></div>
+      <div class="ht-sub">Bloom Bringer badge unlocks at 5 CSR events</div>
+      <div class="ht-link">Open The Hive →</div>
+    </div>
+
+    <div class="card-warm warm-inner">
+      <h3 style="margin-top:0;">Active activity</h3>
+      <div style="font-size:12.5px; color:var(--text-muted);">Reforestation Drive — 34 of 50 spots filled</div>
+      <div class="quest-bar"><div class="quest-fill" id="initiative-fill"></div></div>
+      <div class="quest-reward">Reward: 50 XP + Green Thumb badge</div>
+    </div>
+  </aside>
+</div>
+
+<script>
+
+/* ---------- generic pixel-grid renderer ---------- */
+function renderPixels(svgId, grid, legend, cell){
+  const svg = document.getElementById(svgId);
+  if(!svg) return;
+  let frag = '';
+  grid.forEach((row, y) => { [...row].forEach((ch, x) => { if (ch !== '.') frag += `<rect x="${x}" y="${y}" width="1" height="1" fill="${legend[ch]}"/>`; }); });
+  svg.innerHTML = frag;
+  svg.setAttribute('viewBox', `0 0 ${grid[0].length} ${grid.length}`);
+  if(cell){ svg.setAttribute('width', grid[0].length*cell); svg.setAttribute('height', grid.length*cell); }
+}
+
+/* deterministic tiny PRNG so the grove looks the same every load */
+function mulberry32(a){ return function(){ a|=0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a>>>15, 1 | a); t = t + Math.imul(t ^ t>>>7, 61 | t) ^ t; return ((t ^ t>>>14) >>> 0) / 4294967296; }; }
+
+/* ---------- procedural pixel tree ---------- */
+function genTree(w,h,seed){
+  const rng = mulberry32(seed||7);
+  const g = Array.from({length:h}, ()=> Array(w).fill('.'));
+  const trunkW = Math.max(2, Math.floor(w*0.16));
+  const trunkH = Math.floor(h*0.30);
+  const cx = w/2;
+  for(let y=h-trunkH; y<h; y++){ for(let x=Math.floor(cx-trunkW/2); x<Math.ceil(cx+trunkW/2); x++){ if(x>=0&&x<w) g[y][x]='T'; } }
+  const canopyH = h - trunkH + 2;
+  const cy = canopyH*0.55, rx = w*0.47, ry = canopyH*0.5;
+  for(let y=0;y<canopyH;y++){ for(let x=0;x<w;x++){
+    const dx=(x-cx)/rx, dy=(y-cy)/ry, d = dx*dx+dy*dy;
+    if(d<=1){ let shade = d>0.72 ? 'D' : (rng()<0.14 ? 'H' : 'L'); if(rng()<0.05) shade='F'; g[y][x]=shade; }
+  }}
+  return g.map(r=>r.join(''));
+}
+
+/* ---------- procedural pixel vine: tight spring curl + pink blossoms ---------- */
+function genVine(h, w, seed){
+  w = w||4;
+  const rng = mulberry32(seed||3);
+  const g = Array.from({length:h}, ()=> Array(w).fill('.'));
+  let x = Math.floor(w/2), dir = rng()<0.5?1:-1;
+  for(let y=0;y<h;y++){
+    g[y][x]='S';
+    if(y%2===1){ x += dir; if(x<=0||x>=w-1) dir*=-1; x = Math.max(0, Math.min(w-1,x)); }
+    if(y%3===1){
+      const side = dir*-1;
+      const lx = Math.max(0, Math.min(w-1, x+side));
+      if(g[y][lx]==='.') g[y][lx] = (y%9===1) ? 'F' : 'L';
+      if(y%9===1 && y+1<h){ const lx2 = Math.max(0, Math.min(w-1, lx+side)); if(g[y+1][lx2]==='.') g[y+1][lx2]='f'; }
+    }
+  }
+  return g.map(r=>r.join(''));
+}
+
+/* ---------- large detailed pixel flower (bloom decoration) ---------- */
+function genFlower(size, seed){
+  const g = Array.from({length:size}, ()=> Array(size).fill('.'));
+  const cx=size/2, cy=size/2, petals=5, petalR=size*0.24, dist=size*0.27;
+  for(let p=0;p<petals;p++){
+    const ang = (Math.PI*2/petals)*p - Math.PI/2;
+    const px = cx + Math.cos(ang)*dist, py = cy + Math.sin(ang)*dist;
+    for(let y=0;y<size;y++){ for(let x=0;x<size;x++){
+      const dx=x-px, dy=y-py, d=Math.sqrt(dx*dx+dy*dy);
+      if(d<=petalR && g[y][x]==='.'){ g[y][x] = d<petalR*0.55 ? 'p' : (d>petalR*0.88 ? 'e' : 'P'); }
+    }}
+  }
+  const cR = size*0.15;
+  for(let y=0;y<size;y++){ for(let x=0;x<size;x++){
+    const dx=x-cx, dy=y-cy, d=Math.sqrt(dx*dx+dy*dy);
+    if(d<=cR){ g[y][x] = d>cR*0.55 ? 'c' : 'C'; }
+  }}
+  return g.map(r=>r.join(''));
+}
+const flowerLegend = {P:'#F76FA6', p:'#C6437F', e:'#FBD0E2', C:'#FFDF82', c:'#D9A430'};
+renderPixels('bloom-hero', genFlower(19,51), flowerLegend, 3);
+renderPixels('bloom-side', genFlower(21,52), flowerLegend, 3);
+renderPixels('bloom-dock', genFlower(21,53), flowerLegend, 3);
+const vineLegend = {S:'#5C7A3E', L:'#3C8A34', F:'#F781AE', f:'#FBB4CE'};
+const treeLegend = {L:'#3C8A34', D:'#245F21', H:'#8FC46A', T:'#6B4423', F:'#F781AE'};
+
+renderPixels('side-vine', genVine(70,4,11), vineLegend, 5);
+renderPixels('side-tree', genTree(16,20,4), treeLegend, 6);
+renderPixels('dock-vine', genVine(70,4,17), vineLegend, 5);
+renderPixels('dock-tree', genTree(14,18,9), treeLegend, 6);
+renderPixels('hero-vine-l', genVine(12,4,21), vineLegend, 5);
+renderPixels('hero-vine-r', genVine(12,4,23), vineLegend, 5);
+renderPixels('hero-tree', genTree(11,13,31), treeLegend, 9);
+renderPixels('main-tree', genTree(20,26,42), treeLegend, 12);
+['hero-vine-l','hero-vine-r'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.opacity = .5; });
+['side-vine','dock-vine'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.opacity = .85; });
+
+/* small leaf sprig used as section-title flourish */
+const leafGrid = ["....G....","...GGG...","..GGGGG..",".GGGGGGG.","GGGGGGGGG",".GGGGGGG.","..GGGGG..","...GGG...","....G...."];
+const flowerGrid = ["....F....","...FFF...","..FFCFF..",".FFFCFFF.","FFFFCFFFF",".FFFCFFF.","..FFCFF..","...FFF...","....F...."];
+const dropGrid = ["....D....","....D....","...DDD...","..DDDDD..",".DDDDDDD.","DDDDDDDDD","DDDDDDDDD",".DDDDDDD.","..DDDDD.."];
+const sunGrid = ["S...S...S",".S..S..S.","..S.S.S..","SSS.O.SSS","...OOO...","SSS.O.SSS","..S.S.S..",".S..S..S.","S...S...S"];
+['leaf-1','leaf-2','leaf-3','leaf-4','leaf-5'].forEach(id=> renderPixels(id, leafGrid, {G:'var(--env)'}));
+
+/* ---------- pixel bee mascot ---------- */
+const beeLegend = { K:'#1A1A1A', Y:'#FFD34D', W:'#FFFFFF', P:'#FF9EC4', B:'#BFE3FF' };
+const bee = [
+"......K...K......","......K...K......",".....KYYYYYK.....","....KYYYYYYYK....",
+"...KYYYYYYYYYK...","...KYWWYYYWWYK...","BBBKYWKYYYKWYKBBB","BBBKYYYYYYYYYKBBB",
+"BBPKYYYYYYYYYKPBB","...KYYYYYYYYYK...","...KKKKKKKKKKK...","...KYYYYYYYYYK...",
+"...KYYYYYYYYYK...","...KKKKKKKKKKK...","...KYYYYYYYYYK...","....KYYYYYYYK....",
+".....KYYYYYK.....","......K...K......",".....K.....K....."
+];
+function renderPixelsRaw(svgId, grid, legend){
+  const svg = document.getElementById(svgId);
+  if(!svg) return;
+  let frag = '';
+  grid.forEach((row, y) => { [...row].forEach((ch, x) => { if (ch !== '.') frag += `<rect x="${x}" y="${y}" width="1" height="1" fill="${legend[ch]}"/>`; }); });
+  svg.innerHTML = frag;
+}
+renderPixelsRaw('bee-svg', bee, beeLegend);
+
+/* ---------- badge icon set ---------- */
+
+/* ---------- composite radial gauge ---------- */
+function buildGauge(svgId, value, color, target){
+  const svg = document.getElementById(svgId);
+  const cx = 75, cy = 75, r = 62, strokeW = 12;
+  const circumference = 2*Math.PI*r;
+  const len = (value/100)*circumference;
+  svg.innerHTML = `
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border)" stroke-width="${strokeW}"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="${strokeW}" stroke-linecap="round"
+      stroke-dasharray="${circumference}" stroke-dashoffset="${circumference}" transform="rotate(-90 ${cx} ${cy})">
+      <animate attributeName="stroke-dashoffset" from="${circumference}" to="${circumference-len}" dur="1.1s" begin=".3s" fill="freeze"/>
+    </circle>`;
+}
+buildGauge('gauge-svg', 68, 'var(--soc)');
+let n=0; const compEl = document.getElementById('composite-score'); const target = 68;
+const timer = setInterval(()=>{ n+=2; if(n>=target){n=target; clearInterval(timer);} compEl.textContent = n; }, 25);
+
+/* ---------- vertical mini pillar rings ---------- */
+function buildTrackColor(id, color, value, delay){
+  const track = document.getElementById(id); const segs = 20; const on = Math.round(value/5);
+  for(let i=0;i<segs;i++){
+    const seg = document.createElement('div'); seg.className = 'ring-seg' + (i<on ? ' on' : '');
+    if(i<on){ seg.style.background = color; seg.style.animationDelay = (delay + i*18) + 'ms'; }
+    track.appendChild(seg);
+  }
+}
+buildTrackColor('engage-track', 'var(--soc)', 74, 700);
+buildTrackColor('dei-track', 'var(--bloom)', 65, 850);
+buildTrackColor('well-track', 'var(--gold)', 63, 1000);
+
+/* ---------- KPI spotlight ring ---------- */
+(function(){
+  const svg = document.getElementById('sp-gauge'), cx=42, cy=42, r=34, sw=8;
+  const circumference = 2*Math.PI*r, len = 0.73*circumference;
+  svg.innerHTML = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border)" stroke-width="${sw}"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--soc)" stroke-width="${sw}" stroke-linecap="round"
+      stroke-dasharray="${circumference}" stroke-dashoffset="${circumference}" transform="rotate(-90 ${cx} ${cy})">
+      <animate attributeName="stroke-dashoffset" from="${circumference}" to="${circumference-len}" dur="1s" begin=".4s" fill="freeze"/>
+    </circle>`;
+})();
+
+/* ---------- CSR story strip (horizontal scroll) ---------- */
+const stories = [
+  {icon:'drop', name:"Beach Cleanup", who:"Alice", xp:"+50 XP", date:"Jul 10", color:'var(--soc)'},
+  {icon:'leaf', name:"Tree Planting", who:"Bob", xp:"+30 XP", date:"Jul 8", color:'var(--env)'},
+  {icon:'sun', name:"Food Drive", who:"Carol", xp:"+40 XP", date:"Jul 5", color:'var(--gold)'},
+  {icon:'flower', name:"Blood Donation", who:"David", xp:"+60 XP", date:"Jul 3", color:'var(--bloom)'},
+  {icon:'leaf', name:"Skill Workshop", who:"Esha", xp:"+35 XP", date:"Jun 29", color:'var(--env)'},
+  {icon:'drop', name:"Mentorship Sprint", who:"Farid", xp:"+45 XP", date:"Jun 24", color:'var(--soc)'},
+];
+const strip = document.getElementById('story-strip');
+const storyIcons = { drop:{g:dropGrid,l:{D:'#2C7A87'}}, leaf:{g:leafGrid,l:{G:'#306D29'}}, sun:{g:sunGrid,l:{S:'#D9A430',O:'#FFDF82'}}, flower:{g:flowerGrid,l:{F:'#F76FA6',C:'#D9A430'}} };
+stories.forEach((s,i)=>{
+  const card = document.createElement('div'); card.className = 'story-card card';
+  card.innerHTML = `<div class="stile" style="background:${s.color}22;"><svg class="crisp" width="34" height="34" viewBox="0 0 9 9" id="story-${i}"></svg></div>
+    <div class="sname">${s.name}</div><div class="sxp">${s.xp}</div>
+    <div class="smeta"><span>${s.who}</span><span>${s.date}</span></div>`;
+  strip.appendChild(card);
+  const icon = storyIcons[s.icon];
+  if(icon) renderPixels('story-'+i, icon.g, icon.l);
+});
+
+/* ---------- workforce diversity donut ---------- */
+const donutData = [
+  {name:"Women", value:41, color:'var(--bloom)'},
+  {name:"Men", value:56, color:'var(--soc)'},
+  {name:"Non-binary / other", value:3, color:'var(--gold)'},
+];
+function buildDonut(svgId, data, cx, cy, r, strokeW){
+  const svg = document.getElementById(svgId);
+  const circumference = 2*Math.PI*r;
+  let offsetAcc = 0;
+  let frag = `<g transform="rotate(-90 ${cx} ${cy})">`;
+  data.forEach(d=>{
+    const len = (d.value/100)*circumference;
+    frag += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${d.color}" stroke-width="${strokeW}" stroke-dasharray="${len} ${circumference-len}" stroke-dashoffset="${-offsetAcc}"/>`;
+    offsetAcc += len;
+  });
+  frag += `</g>`;
+  frag += `<text x="${cx}" y="${cy-4}" text-anchor="middle" class="donut-center-val">2,340</text>`;
+  frag += `<text x="${cx}" y="${cy+12}" text-anchor="middle" class="donut-center-lbl">employees</text>`;
+  svg.innerHTML = frag;
+}
+buildDonut('donut-svg', donutData, 60, 60, 44, 18);
+const donutLegendEl = document.getElementById('donut-legend');
+donutData.forEach(d=>{ const row = document.createElement('div'); row.className='donut-legend-item';
+  row.innerHTML = `<span class="dot" style="background:${d.color};"></span><span class="dname">${d.name}</span><span class="dpct mono">${d.value}%</span>`;
+  donutLegendEl.appendChild(row); });
+
+/* ---------- training completion ---------- */
+const training = [
+  {name:"Safety", val:95, color:'var(--soc)'},
+  {name:"ESG basics", val:78, color:'var(--env)'},
+  {name:"DEI", val:62, color:'var(--bloom)'},
+  {name:"Code of conduct", val:88, color:'var(--gold)'},
+];
+const trainEl = document.getElementById('train-list');
+training.forEach((d,i)=>{ const row = document.createElement('div'); row.className='train-row';
+  row.innerHTML = `<span class="tname">${d.name}</span><div class="ttrack"><div class="tfill" style="background:${d.color};"></div></div><span class="tpct mono">${d.val}%</span>`;
+  trainEl.appendChild(row); setTimeout(()=>{ row.querySelector('.tfill').style.width = d.val+'%'; }, 500+i*110); });
+
+/* ---------- department participation ---------- */
+const lb = [
+  {dept:"Customer Success", score:88, color:'var(--soc)'},
+  {dept:"Engineering", score:81, color:'var(--soc)'},
+  {dept:"R&D", score:74, color:'var(--soc)'},
+];
+const lbList = document.getElementById('lb-list');
+lb.forEach((d,i)=>{ const row = document.createElement('div'); row.className='lb-row';
+  row.innerHTML = `<span class="lb-rank">${i+1}</span><span class="lb-name">${d.dept}</span><div class="lb-track"><div class="lb-fill" style="background:${d.color};"></div></div><span class="lb-score">${d.score}</span>`;
+  lbList.appendChild(row); setTimeout(()=>{ row.querySelector('.lb-fill').style.width = d.score+'%'; }, 500+i*80); });
+document.getElementById('dept-view-all').addEventListener('click', ()=> showToast('Opening Department Perf…'));
+document.getElementById('dept-view-all').addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); showToast('Opening Department Perf…'); } });
+
+
+/* ---------- recent approvals feed ---------- */
+const activity = [
+  {who:"PS", text:"had the Beach Cleanup submission approved", color:'var(--soc)', xp:"+50 XP", time:"1h ago"},
+  {who:"MS", text:"completed the DEI training module", color:'var(--bloom)', xp:"+15 XP", time:"4h ago"},
+  {who:"RM", text:"organized a blood donation drive — 96 units", color:'var(--gold)', xp:"+80 XP", time:"6h ago"},
+  {who:"DJ", text:"logged 4 volunteer hours at the shelter", color:'var(--soc)', xp:"+18 XP", time:"9h ago"},
+  {who:"TN", text:"had a Tree Planting submission approved", color:'var(--env)', xp:"+30 XP", time:"1d ago"},
+  {who:"VK", text:"completed the Safety training module", color:'var(--soc)', xp:"+15 XP", time:"1d ago"},
+  {who:"NR", text:"hosted a skill-share workshop for 12 people", color:'var(--gold)', xp:"+35 XP", time:"2d ago"},
+  {who:"AK", text:"referred a new CSR partner NGO", color:'var(--bloom)', xp:"+25 XP", time:"2d ago"},
+];
+const actList = document.getElementById('activity-list');
+activity.forEach(a=>{ const row = document.createElement('div'); row.className='act-row';
+  row.innerHTML = `<div class="act-avatar">${a.who}</div><span class="act-dot" style="background:${a.color};"></span><span class="act-text"><b>${a.who}</b> ${a.text}</span><span class="act-xp">${a.xp}</span><span class="act-time">${a.time}</span>`;
+  actList.appendChild(row); });
+
+setTimeout(()=>{ document.getElementById('target-fill').style.width='73%'; }, 500);
+document.getElementById('hive-teaser').addEventListener('click', ()=> showToast('Opening The Hive…'));
+document.getElementById('hive-teaser').addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); showToast('Opening The Hive…'); } });
+setTimeout(()=>{ document.getElementById('initiative-fill').style.width='68%'; }, 700);
+
+
+/* ============ FUNCTIONALITY LAYER: dropdowns, keyboard, toast, notifications ============ */
+(function(){
+  const notifications = [
+    { title:"CSR approval pending", body:"Beach Cleanup submission is waiting for review.", time:"18m ago", read:false },
+    { title:"Training reminder", body:"DEI training completion is at 62% — reminder sent.", time:"2h ago", read:false },
+    { title:"New activity posted", body:"Reforestation Drive now has 34 of 50 spots filled.", time:"5h ago", read:false },
+    { title:"Diversity report ready", body:"This quarter's workforce diversity snapshot is ready.", time:"1d ago", read:true },
+  ];
+  const notifList = document.getElementById('notif-list');
+  const notifDot = document.getElementById('notif-dot');
+  function renderNotifs(){
+    if(!notifList) return;
+    notifList.innerHTML = '';
+    notifications.forEach((n,i)=>{
+      const row = document.createElement('div');
+      row.className = 'notif-item' + (n.read ? ' read' : '');
+      row.setAttribute('role','menuitem'); row.tabIndex = 0;
+      row.innerHTML = `<span class="dot"></span><span class="body"><b>${n.title}</b><span>${n.body}</span></span><span class="time">${n.time}</span>`;
+      const markRead = ()=>{ n.read = true; renderNotifs(); };
+      row.addEventListener('click', markRead);
+      row.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); markRead(); } });
+      notifList.appendChild(row);
+    });
+    const unread = notifications.filter(n=>!n.read).length;
+    if(notifDot){ notifDot.textContent = unread; notifDot.classList.toggle('hidden', unread===0); }
+  }
+  renderNotifs();
+  document.getElementById('notif-mark-all')?.addEventListener('click', ()=>{ notifications.forEach(n=>n.read=true); renderNotifs(); showToast('All notifications marked as read'); });
+
+  /* ---------- generic dropdown open/close, escape, click-outside ---------- */
+  function wireDropdown(btnId, panelId){
+    const btn = document.getElementById(btnId), panel = document.getElementById(panelId);
+    if(!btn || !panel) return;
+    function close(){ panel.classList.remove('open'); panel.setAttribute('aria-hidden','true'); btn.setAttribute('aria-expanded','false'); }
+    function open(){ closeAllDropdowns(); panel.classList.add('open'); panel.setAttribute('aria-hidden','false'); btn.setAttribute('aria-expanded','true'); }
+    btn.addEventListener('click', e=>{ e.stopPropagation(); panel.classList.contains('open') ? close() : open(); });
+    panel._close = close;
+  }
+  function closeAllDropdowns(){ document.querySelectorAll('.dropdown-panel.open').forEach(p=> p._close && p._close()); }
+  wireDropdown('notif-btn','notif-panel');
+  wireDropdown('avatar-btn','user-panel');
+  document.addEventListener('click', closeAllDropdowns);
+  document.querySelectorAll('.dropdown-panel').forEach(p=> p.addEventListener('click', e=> e.stopPropagation()));
+  document.addEventListener('keydown', e=>{ if(e.key === 'Escape') closeAllDropdowns(); });
+
+  wireDropdown('role-btn','role-panel');
+  document.querySelectorAll('#role-panel .dropdown-item').forEach(item=>{
+    item.addEventListener('click', ()=>{
+      const role = item.dataset.role;
+      document.getElementById('role-val').textContent = role;
+      document.getElementById('role-btn').setAttribute('aria-label', 'Role switcher, currently ' + role);
+      showToast('Switched to ' + role + ' view');
+      closeAllDropdowns();
+    });
+  });
+
+  /* user menu items just confirm via toast (no backend in this mockup) */
+  document.querySelectorAll('#user-panel .dropdown-item').forEach(item=>{
+    item.addEventListener('click', ()=>{ showToast(item.textContent + ' — coming soon'); closeAllDropdowns(); });
+  });
+
+  /* ---------- search: ⌘K / Ctrl+K focuses it, Enter shows a toast ---------- */
+  const searchBox = document.querySelector('.search');
+  if(searchBox){
+    searchBox.addEventListener('click', ()=> showToast('Search — coming soon'));
+    searchBox.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); showToast('Search — coming soon'); } });
+  }
+  document.addEventListener('keydown', e=>{
+    if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); searchBox?.focus(); showToast('Search — coming soon'); }
+  });
+
+  /* ---------- nav items: Enter/Space activates, like a click ---------- */
+  document.querySelectorAll('.nav-item[role="link"]').forEach(item=>{
+    item.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); item.click(); } });
+  });
+
+  /* ---------- xp pill: keyboard activation shows a toast with level detail ---------- */
+  document.querySelectorAll('.xp-pill[role="button"]').forEach(pill=>{
+    const act = ()=> showToast('Level 14 — 660 XP to Level 15');
+    pill.addEventListener('click', act);
+    pill.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); act(); } });
+  });
+
+  /* ---------- toast system ---------- */
+  let stack = document.querySelector('.toast-stack');
+  if(!stack){ stack = document.createElement('div'); stack.className='toast-stack'; stack.setAttribute('aria-live','polite'); document.body.appendChild(stack); }
+  window.showToast = function(msg, ms){
+    ms = ms || 2600;
+    const t = document.createElement('div');
+    t.className = 'toast'; t.textContent = msg; t.setAttribute('role','status');
+    stack.appendChild(t);
+    requestAnimationFrame(()=> t.classList.add('show'));
+    setTimeout(()=>{ t.classList.remove('show'); setTimeout(()=> t.remove(), 220); }, ms);
+  };
+
+  /* ---------- badges: keyboard-focusable, locked ones explain themselves ---------- */
+  document.querySelectorAll('.badge, .gal-badge').forEach(b=>{
+    b.tabIndex = 0;
+    b.setAttribute('role','button');
+    const isLocked = b.classList.contains('locked');
+    b.setAttribute('aria-label', isLocked ? 'Locked badge — keep going to unlock' : 'Earned badge');
+    const act = ()=> showToast(isLocked ? 'Locked — keep going to unlock this badge' : 'Badge earned!');
+    b.addEventListener('click', act);
+    b.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); act(); } });
+  });
+})();
+
+
+/* ---------- generic click/keyboard affordance for remaining static elements ---------- */
+(function(){
+  function wireList(selector, label){
+    document.querySelectorAll(selector).forEach(el=>{
+      if(el.hasAttribute('data-wired')) return;
+      el.setAttribute('data-wired','1');
+      el.tabIndex = 0;
+      el.setAttribute('role','button');
+      const act = ()=> showToast((label || 'Open') + ' — coming soon');
+      el.addEventListener('click', act);
+      el.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); act(); } });
+    });
+  }
+  wireList('.lb-row', 'View department detail');
+  wireList('.act-row', 'View activity detail');
+  wireList('.kpi', 'View metric detail');
+  document.querySelectorAll('.btn').forEach(el=>{
+    if(el.hasAttribute('data-wired')) return;
+    el.setAttribute('data-wired','1');
+    el.tabIndex = 0; el.setAttribute('role','button');
+    const act = ()=> showToast((el.textContent||'').trim() + ' — coming soon');
+    el.addEventListener('click', act);
+    el.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); act(); } });
+  });
+})();
+
+</script>
+</body>
+</html>

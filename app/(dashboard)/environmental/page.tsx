@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/use-auth-store';
 import { useOrgStore } from '@/stores/use-org-store';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { WeatherWidget } from '@/components/environmental/weather-widget';
 import { Button } from '@/components/ui/button';
 import { 
   Leaf, 
@@ -180,6 +181,9 @@ export default function EnvironmentalDashboard() {
           </Link>
         </div>
       </div>
+
+      {/* Weather & Anomalies */}
+      <WeatherWidget />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

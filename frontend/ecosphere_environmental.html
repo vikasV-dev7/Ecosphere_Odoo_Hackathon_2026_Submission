@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>EcoSphere — Environmental</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FBF5DE; --surface:#EAF3E1; --surface-warm:#FFF3DC; --surface-warm2:#FFF8E9;
+    --border:#D9E4CB; --border-warm:#E8C878;
+    --text:#20301D; --text-muted:#5C6B54; --text-faint:#8E9982;
+    --env:#3C8A34; --env-strong:#0D530E; --soc:#2C7A87; --gov:#B23A6B;
+    --gold:#D9A430; --gold-bright:#FFDF82; --gold-dim:#D9A4301C;
+    --bloom:#F76FA6; --bloom-soft:#FBB4CE; --bloom-dim:#F76FA61C; --bloom-deep:#C6437F;
+    --danger:#C2483A; --ink:#20301D;
+    --scope1:#0D530E; --scope2:#3C8A34; --scope3:#8FC46A;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:'Inter', sans-serif; font-size:14px; }
+  .disp{ font-family:'Space Grotesk', sans-serif; font-weight:600; }
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+  svg.crisp{ image-rendering:pixelated; shape-rendering:crispEdges; }
+
+  .app{ display:grid; grid-template-columns:220px 1fr 260px; position:relative; }
+
+  /* shared card language: rounded, but with a visible border + a flat offset shadow */
+  .card{ position:relative; background:var(--surface); border:1.5px solid var(--border); border-radius:10px;
+    box-shadow:3px 3px 0 rgba(34,51,31,0.08); transition:transform .18s ease, box-shadow .18s ease; }
+  .card:hover{ transform:translate(-1px,-3px); box-shadow:5px 6px 0 rgba(34,51,31,0.10); }
+  .card-warm{ position:relative; background:linear-gradient(120deg, var(--surface-warm), var(--surface-warm2), var(--surface-warm));
+    border:1.5px solid var(--border-warm); border-radius:10px; box-shadow:3px 3px 0 rgba(190,138,46,0.14); }
+  .card-warm.bloom{ background:linear-gradient(120deg, #FFEAF2, var(--surface-warm2), #FFEAF2); border-color:var(--bloom-soft); box-shadow:3px 3px 0 rgba(247,111,166,0.18); }
+
+  /* KPI category accent */
+  .kpi.env{ border-top:3px solid var(--env); }
+  .kpi.soc{ border-top:3px solid var(--soc); }
+  .kpi.gov{ border-top:3px solid var(--gov); }
+
+  /* ---------- DECORATION LAYER: pixel trees & vines ---------- */
+  .decor{ position:absolute; pointer-events:none; z-index:0; }
+  .sidebar, .dock, .hero, .main{ position:relative; }
+  .sidebar > *:not(.decor), .dock > *:not(.decor), .hero > *:not(.decor){ position:relative; z-index:1; }
+  .main-watermark{ position:absolute; top:60px; left:50%; transform:translateX(-50%); opacity:.045; z-index:0; pointer-events:none; }
+
+  /* SIDEBAR */
+  .sidebar{ padding:20px 14px; border-right:1px solid var(--border); display:flex; flex-direction:column; gap:2px; overflow:hidden; }
+  .logo{ display:flex; align-items:center; gap:8px; padding:6px 10px 22px; opacity:0; animation:riseIn .3s ease-out forwards; }
+  .logo-mark{ width:24px; height:24px; border-radius:7px; background:linear-gradient(135deg, var(--env), var(--soc)); }
+  .logo span{ font-size:16px; }
+  .nav-item{ display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:8px; cursor:pointer; color:var(--text-muted); font-weight:500;
+    position:relative; opacity:0; transform:translateY(8px); animation:riseIn .25s ease-out forwards; }
+  .nav-item::before{ content:''; position:absolute; left:-14px; top:6px; bottom:6px; width:0; background:var(--env); border-radius:0 4px 4px 0; transition:width .18s ease; }
+  .nav-item:hover, .nav-item.active{ background:var(--surface); color:var(--text); }
+  .nav-item:hover::before, .nav-item.active::before{ width:3px; }
+  .nav-item svg{ flex:none; }
+  .nav-item:nth-child(2){animation-delay:.03s;} .nav-item:nth-child(3){animation-delay:.06s;}
+  .nav-item:nth-child(4){animation-delay:.09s;} .nav-item:nth-child(5){animation-delay:.12s;}
+  .nav-item:nth-child(6){animation-delay:.15s;} .nav-item:nth-child(7){animation-delay:.18s;}
+  .nav-item:nth-child(8){animation-delay:.21s;} .nav-item:nth-child(9){animation-delay:.24s;}
+  @keyframes riseIn{ to{ opacity:1; transform:translateY(0); } }
+
+  /* MAIN */
+  .main{ padding:20px 26px 40px; overflow:hidden; }
+  .topbar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; opacity:0; animation:fadeIn .25s ease-out .08s forwards; }
+  @keyframes fadeIn{ to{opacity:1;} }
+  .crumb{ display:flex; align-items:center; gap:6px; color:var(--text-muted); font-size:13px; }
+  .crumb b{ color:var(--text); }
+  .search{ display:flex; align-items:center; gap:8px; border:1.5px solid var(--border); border-radius:8px; padding:8px 12px; width:220px; color:var(--text-faint); font-size:13px; }
+  .topbar-right{ display:flex; align-items:center; gap:14px; }
+  .xp-pill{ display:flex; align-items:center; gap:6px; background:var(--gold-dim); border:1.5px solid var(--border-warm); border-radius:999px; padding:6px 12px 6px 6px; cursor:pointer; animation:glowPulse 2.4s ease-out 1; }
+  .xp-lvl{ width:22px; height:22px; border-radius:999px; background:var(--gold); display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; color:#fff; }
+  .xp-star{ color:var(--bloom); font-size:11px; }
+  @keyframes glowPulse{ 0%{ box-shadow:0 0 0 0 rgba(190,138,46,.45);} 70%{ box-shadow:0 0 0 12px rgba(190,138,46,0);} 100%{ box-shadow:0 0 0 0 rgba(190,138,46,0);} }
+  .avatar{ width:32px; height:32px; border-radius:999px; background:var(--surface); border:1.5px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; }
+
+  /* HERO */
+  .hero{ display:flex; align-items:center; gap:26px; padding:22px; margin-bottom:20px; opacity:0; transform:scale(.97); animation:heroIn .4s cubic-bezier(.2,1,.3,1) .12s forwards; overflow:hidden; }
+  @keyframes heroIn{ to{ opacity:1; transform:scale(1); } }
+  .bee-wrap{ flex:none; animation:beeFloat 2.8s ease-in-out infinite; }
+  @keyframes beeFloat{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-5px);} }
+  /* environmental hero: 2x2 ring grid + a divided composite panel, instead of overview's single wide row */
+  .constellation{ display:flex; align-items:stretch; gap:26px; flex:1; }
+  .ring-grid{ display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:16px 26px; flex:1; align-content:center; }
+  .ring-bar{ width:auto; }
+  .ring-label{ font-size:12.5px; margin-bottom:5px; display:flex; justify-content:space-between; color:var(--text-muted); }
+  .ring-track{ height:8px; border-radius:999px; background:var(--border); display:flex; gap:2px; padding:1px; overflow:hidden; }
+  .ring-seg{ flex:1; background:transparent; border-radius:2px; }
+  .ring-seg.on{ animation:segLight .12s linear forwards; }
+  @keyframes segLight{ from{ transform:scaleY(0);} to{ transform:scaleY(1);} }
+  .composite{ text-align:center; flex:none; width:120px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    border-left:1.5px dashed var(--border-warm); padding-left:24px; }
+  .composite .score{ font-family:'Press Start 2P'; font-weight:400; font-size:30px; }
+  .composite .lbl{ font-size:11px; letter-spacing:1px; color:var(--text-faint); text-transform:uppercase; margin-top:8px; }
+  .composite .sub{ font-size:11px; color:var(--env-strong); margin-top:4px; }
+
+  /* KPI: one unified stat-strip card (divided columns) instead of overview's grid of separate boxy cards */
+  .kpi-row{ display:grid; grid-template-columns:repeat(6,1fr); gap:0; margin-bottom:20px; padding:18px 4px;
+    opacity:0; transform:translateY(8px); animation:riseIn .3s ease-out .26s forwards; }
+  .kpi{ padding:0 18px; border-left:1px solid var(--border); }
+  .kpi:first-child{ border-left:none; }
+  .kpi .lbl{ font-size:10.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.4px; margin-bottom:8px; }
+  .kpi .val{ font-family:'Press Start 2P'; font-size:14px; line-height:1.5; }
+  .kpi .delta{ font-size:12px; margin-top:6px; display:flex; align-items:center; gap:4px; }
+  .spark{ display:flex; align-items:flex-end; gap:2px; height:16px; margin-top:8px; }
+  .spark b{ width:5px; border-radius:1px; display:block; background:var(--border); }
+
+  .trend-full{ margin-bottom:20px; }
+  .row3{ display:grid; grid-template-columns:1fr 1.05fr 1fr; gap:16px; margin-bottom:20px; align-items:stretch; }
+  .section-title{ font-size:14px; margin-bottom:12px; display:flex; align-items:center; gap:7px; }
+  .section-sub{ font-size:11.5px; color:var(--text-faint); margin:-6px 0 12px; }
+  .legend{ display:flex; gap:16px; font-size:12px; color:var(--text-muted); margin-bottom:10px; flex-wrap:wrap; }
+  .legend span{ display:inline-flex; align-items:center; gap:5px; }
+  .legend i{ width:12px; height:3px; border-radius:2px; display:inline-block; }
+  .legend i.dot{ width:8px; height:8px; border-radius:999px; }
+
+  .lb-row{ display:flex; align-items:center; gap:8px; margin-bottom:12px; font-size:12.5px; }
+  .lb-rank{ width:16px; text-align:center; color:var(--text-faint); font-family:'IBM Plex Mono'; }
+  .lb-name{ flex:1; }
+  .lb-track{ width:70px; height:6px; border-radius:999px; background:var(--border); overflow:hidden; }
+  .lb-fill{ height:100%; width:0; border-radius:999px; transition:width .8s cubic-bezier(.2,1,.3,1); }
+  .lb-score{ font-family:'IBM Plex Mono'; width:24px; text-align:right; }
+
+  .activity{ padding:18px; margin-bottom:20px; }
+  .act-row{ display:flex; align-items:center; gap:10px; padding:10px 2px; border-top:1px solid var(--border); font-size:12.5px; }
+  .act-row:first-of-type{ border-top:none; }
+  .act-avatar{ width:26px; height:26px; border-radius:999px; background:var(--border); display:flex; align-items:center; justify-content:center; font-size:12px; flex:none; }
+  .act-dot{ width:7px; height:7px; border-radius:999px; flex:none; }
+  .act-text{ flex:1; color:var(--text-muted); }
+  .act-text b{ color:var(--text); font-weight:500; }
+  .act-xp{ font-family:'IBM Plex Mono'; font-size:12.5px; color:var(--gold); }
+  .act-time{ font-size:11px; color:var(--text-faint); width:50px; text-align:right; }
+
+  /* DONUT */
+  .donut-card{ padding:18px; display:flex; flex-direction:column; }
+  .donut-row{ display:flex; flex-direction:column; align-items:center; gap:14px; flex:1; }
+  .donut-legend{ display:flex; flex-direction:column; gap:7px; width:100%; }
+  .donut-legend-item{ display:flex; align-items:center; gap:8px; font-size:12px; }
+  .donut-legend-item .dot{ width:9px; height:9px; border-radius:3px; flex:none; }
+  .donut-legend-item .dname{ flex:1; color:var(--text-muted); }
+  .donut-legend-item .dpct{ font-family:'IBM Plex Mono'; }
+  .donut-center-lbl{ font-size:10px; fill:var(--text-faint); font-family:'Inter'; }
+  .donut-center-val{ font-family:'Press Start 2P'; font-size:13px; fill:var(--text); }
+
+  /* DOCK */
+  .dock{ padding:20px 16px; border-left:1px solid var(--border); display:flex; flex-direction:column; gap:14px; overflow:hidden; }
+  .dock h3{ font-size:12px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-faint); margin:4px 0 10px; }
+  .warm-inner{ padding:14px 16px; }
+  .level-row{ display:flex; justify-content:space-between; align-items:center; font-size:13px; margin-bottom:10px; }
+  .level-row b{ font-family:'Press Start 2P'; font-size:11px; font-weight:400; }
+  .xp-bar{ height:7px; border-radius:999px; background:rgba(0,0,0,0.08); overflow:hidden; }
+  .xp-fill{ height:100%; border-radius:999px; background:linear-gradient(90deg, var(--gold), var(--env)); width:0%; transition:width 1s ease-out; }
+  .xp-nums{ display:flex; justify-content:space-between; font-family:'IBM Plex Mono'; font-size:11.5px; margin-top:6px; color:var(--text-muted); }
+
+  .streak-card{ display:flex; align-items:center; gap:10px; }
+  .flame{ font-size:20px; animation:flicker 1.6s ease-in-out infinite; filter:drop-shadow(0 0 3px var(--bloom-soft)); }
+  @keyframes flicker{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.1);} }
+  .streak-num{ font-family:'IBM Plex Mono'; font-size:16px; font-weight:600; color:var(--bloom-deep); }
+  .streak-sub{ font-size:11px; color:var(--text-faint); }
+
+  .wallet-row{ display:flex; align-items:center; gap:8px; padding:6px 0; font-size:12.5px; }
+  .wallet-icon{ width:12px; height:12px; border-radius:3px; flex:none; }
+  .wallet-val{ margin-left:auto; font-family:'IBM Plex Mono'; }
+
+
+  .quest-bar{ height:7px; border-radius:999px; background:rgba(0,0,0,0.08); margin-top:8px; overflow:hidden; }
+  .quest-fill{ height:100%; border-radius:999px; background:var(--env); width:0%; transition:width 1s ease-out; }
+  .quest-reward{ font-family:'IBM Plex Mono'; font-size:12px; color:var(--gold); margin-top:8px; }
+
+  /* ============ FUNCTIONALITY LAYER: focus, motion, dropdowns, toast, skeleton ============ */
+  :focus-visible{ outline:2px solid var(--env); outline-offset:2px; border-radius:4px; }
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; scroll-behavior:auto !important; }
+  }
+  .skip-link{ position:absolute; left:-999px; top:0; background:var(--ink); color:#fff; padding:10px 16px; border-radius:0 0 8px 0; z-index:200; font-size:13px; }
+  .skip-link:focus{ left:0; }
+
+  .icon-btn{ position:relative; width:32px; height:32px; border:none; background:transparent; border-radius:8px;
+    display:flex; align-items:center; justify-content:center; color:var(--text); cursor:pointer; padding:0; }
+  .icon-btn:hover{ background:var(--surface); }
+  .icon-btn:active{ transform:scale(.94); }
+  .notif-dot{ position:absolute; top:1px; right:1px; min-width:14px; height:14px; padding:0 3px; border-radius:999px;
+    background:var(--gov); color:#fff; font-size:9px; font-weight:700; display:flex; align-items:center; justify-content:center; line-height:1; }
+  .notif-dot.hidden{ display:none; }
+
+  .dropdown-wrap{ position:relative; }
+  .dropdown-panel{ position:absolute; top:calc(100% + 10px); right:0; width:300px; background:var(--surface);
+    border:1.5px solid var(--border); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.14); padding:8px; z-index:60;
+    opacity:0; transform:translateY(-6px); pointer-events:none; transition:opacity .15s ease, transform .15s ease; }
+  .dropdown-panel.open{ opacity:1; transform:translateY(0); pointer-events:auto; }
+  .dropdown-panel h4{ font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-faint); margin:6px 8px 8px; }
+  .notif-item{ display:flex; gap:8px; padding:8px; border-radius:8px; cursor:pointer; align-items:flex-start; }
+  .notif-item:hover, .notif-item:focus-visible{ background:var(--bg); }
+  .notif-item .dot{ width:7px; height:7px; border-radius:999px; background:var(--env); flex:none; margin-top:5px; }
+  .notif-item.read .dot{ background:var(--border); }
+  .notif-item .body{ flex:1; font-size:12.5px; line-height:1.4; }
+  .notif-item .body b{ display:block; color:var(--text); font-weight:600; }
+  .notif-item .body span{ color:var(--text-muted); }
+  .notif-item .time{ font-size:10.5px; color:var(--text-faint); white-space:nowrap; }
+  .dropdown-footer{ display:flex; justify-content:space-between; padding:8px 6px 4px; border-top:1px solid var(--border); margin-top:4px; }
+  .link-btn{ background:none; border:none; color:var(--env-strong); font-size:12px; font-weight:600; cursor:pointer; padding:2px; }
+  .link-btn:hover, .link-btn:focus-visible{ text-decoration:underline; }
+  .dropdown-item{ display:block; width:100%; text-align:left; padding:9px 10px; border-radius:8px; color:var(--text);
+    text-decoration:none; font-size:13px; cursor:pointer; background:none; border:none; font-family:inherit; }
+  .dropdown-item:hover, .dropdown-item:focus-visible{ background:var(--bg); }
+
+  .avatar{ border:1.5px solid var(--border); cursor:pointer; padding:0; font-family:inherit; }
+  .avatar:hover, .avatar:focus-visible{ box-shadow:0 0 0 3px var(--gold-dim); }
+  .avatar:active{ transform:scale(.95); }
+
+  .search{ cursor:text; }
+  .search:hover, .search:focus-within{ border-color:var(--border-warm); }
+  .search .kbd{ margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--text-faint);
+    border:1px solid var(--border); border-radius:4px; padding:1px 5px; }
+
+  .toast-stack{ position:fixed; bottom:20px; right:20px; display:flex; flex-direction:column; gap:8px; z-index:100; max-width:280px; }
+  .toast{ background:var(--ink); color:#fff; padding:11px 16px; border-radius:8px; font-size:12.5px; box-shadow:0 8px 20px rgba(0,0,0,.24);
+    opacity:0; transform:translateY(8px); transition:opacity .2s ease, transform .2s ease; }
+  .toast.show{ opacity:1; transform:translateY(0); }
+
+  button{ font-family:inherit; }
+  .badge:focus-visible, .kpi:focus-visible, .lb-row:focus-visible{ outline:2px solid var(--env); outline-offset:2px; border-radius:6px; }
+
+  .lb-row, .act-row, .kpi, .btn{ cursor:pointer; }
+  .lb-row:hover, .act-row:hover{ background:var(--bg); border-radius:6px; }
+  .btn:hover, .btn:focus-visible{ filter:brightness(1.05); }
+  .btn:active{ transform:scale(.97); }
+
+  .role-switcher{ display:flex; align-items:center; gap:6px; border:1.5px solid var(--border); border-radius:8px; background:var(--surface);
+    padding:7px 11px; font-size:12.5px; cursor:pointer; color:var(--text); }
+  .role-switcher:hover{ border-color:var(--border-warm); }
+  .role-switcher .rs-lbl{ color:var(--text-faint); }
+  .role-switcher .rs-val{ font-weight:600; }
+  .role-switcher .rs-caret{ color:var(--text-faint); font-size:10px; }
+
+  .hive-teaser{ padding:14px; cursor:pointer; }
+  .hive-teaser .ht-row{ display:flex; align-items:center; gap:10px; margin-bottom:4px; }
+  .hive-teaser .ht-icon{ width:30px; height:30px; border-radius:8px; background:var(--gold-dim); border:1.5px solid var(--border-warm);
+    display:flex; align-items:center; justify-content:center; font-size:15px; flex:none; }
+  .hive-teaser .ht-title{ font-weight:700; font-size:13px; }
+  .hive-teaser .ht-sub{ font-size:11.5px; color:var(--text-muted); margin:6px 0 10px; }
+  .hive-teaser .ht-link{ font-size:11.5px; font-weight:600; color:var(--gold-dark, var(--gold)); display:flex; align-items:center; gap:4px; }
+
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
+<div class="app">
+  <nav class="sidebar" aria-label="Primary">
+    <svg class="decor crisp" id="side-vine" style="right:2px; top:0;"></svg>
+    <svg class="decor crisp" id="side-tree" style="left:6px; bottom:0;"></svg>
+    <svg class="decor crisp" id="bloom-side" style="left:70px; bottom:2px; filter:drop-shadow(1px 2px 0 rgba(32,48,29,.12));"></svg>
+    <div class="logo"><div class="logo-mark"></div><span class="disp">EcoSphere</span></div>
+    <div class="nav-item" tabindex="0" role="link"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8L8 2l6 6M4 7v6h8V7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Overview</div>
+    <div class="nav-item active" tabindex="0" role="link" aria-current="page"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 14V6M8 6C8 3 6 2 3 2c0 4 2 5 5 5zM8 8c0-3 2-4 5-4 0 4-2 5-5 5" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>Environmental</div>
+    <div class="nav-item" tabindex="0" role="link"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="2.4" stroke="currentColor" stroke-width="1.4"/><path d="M3 14c0-3 2-5 5-5s5 2 5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>Social</div>
+    <div class="nav-item" tabindex="0" role="link"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2l5 2v4c0 3.5-2.2 5.7-5 6.5-2.8-.8-5-3-5-6.5V4l5-2z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>Governance</div>
+    <div class="nav-item" tabindex="0" role="link"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2l1.6 3.8L14 6.4l-3 2.7.8 4.1L8 11.2 4.2 13.2 5 9.1 2 6.4l4.4-.6L8 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>The Hive</div>
+    <div class="nav-item" tabindex="0" role="link"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="8" width="2.5" height="6" stroke="currentColor" stroke-width="1.2"/><rect x="6.8" y="5" width="2.5" height="9" stroke="currentColor" stroke-width="1.2"/><rect x="11.5" y="2" width="2.5" height="12" stroke="currentColor" stroke-width="1.2"/></svg>Reports</div>
+    <div class="nav-item" tabindex="0" role="link"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>Department Perf</div>
+    <div class="nav-item" tabindex="0" role="link"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M8 2v2M8 12v2M14 8h-2M4 8H2M12.2 3.8l-1.4 1.4M5.2 10.8l-1.4 1.4M12.2 12.2l-1.4-1.4M5.2 5.2L3.8 3.8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Platform Settings</div>
+  </nav>
+
+  <main class="main" id="main-content">
+    <svg class="main-watermark crisp" id="main-tree"></svg>
+
+    <div class="topbar">
+      <div class="crumb">Nimbus Retail Pvt Ltd <span>›</span> <b>Environmental</b></div>
+      <div class="topbar-right">
+        <div class="search" tabindex="0" role="button" aria-label="Open search"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.4"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>Search sites, initiatives…<span class="kbd">⌘K</span></div>
+        <div class="dropdown-wrap">
+          <button class="icon-btn" id="notif-btn" aria-haspopup="true" aria-expanded="false" aria-label="Notifications, 3 unread">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M4 12V7a4 4 0 018 0v5l1.2 1.6H2.8L4 12z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6.5 14.5a1.5 1.5 0 003 0" stroke="currentColor" stroke-width="1.3"/></svg>
+            <span class="notif-dot" id="notif-dot">3</span>
+          </button>
+          <div class="dropdown-panel" id="notif-panel" role="menu" aria-hidden="true">
+            <h4>Notifications</h4>
+            <div id="notif-list"></div>
+            <div class="dropdown-footer"><button class="link-btn" id="notif-mark-all">Mark all as read</button><button class="link-btn">View all</button></div>
+          </div>
+        </div>
+        <div class="xp-pill" tabindex="0" role="button" aria-label="Level 14, 2340 experience points"><div class="xp-lvl">14</div><span class="mono" style="font-size:12.5px;">2,340 XP</span><span class="xp-star">★</span></div>
+        <div class="dropdown-wrap">
+          <button class="role-switcher" id="role-btn" aria-haspopup="true" aria-expanded="false" aria-label="Role switcher, currently Admin">
+            <span class="rs-lbl">Role:</span><span class="rs-val" id="role-val">Admin</span><span class="rs-caret">▾</span>
+          </button>
+          <div class="dropdown-panel" id="role-panel" role="menu" aria-hidden="true" style="width:170px;">
+            <button class="dropdown-item" role="menuitem" data-role="Admin">Admin</button>
+            <button class="dropdown-item" role="menuitem" data-role="Manager">Manager</button>
+            <button class="dropdown-item" role="menuitem" data-role="Employee">Employee</button>
+          </div>
+        </div>
+        <div class="dropdown-wrap">
+          <button class="avatar" id="avatar-btn" aria-haspopup="true" aria-expanded="false" aria-label="Open user menu for Aditya K.">AK</button>
+          <div class="dropdown-panel" id="user-panel" role="menu" aria-hidden="true" style="width:180px;">
+            <button class="dropdown-item" role="menuitem">Profile</button>
+            <button class="dropdown-item" role="menuitem">Settings</button>
+            <button class="dropdown-item" role="menuitem">Log out</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero card">
+      <svg class="decor crisp" id="hero-vine-l" style="left:14px; top:6px;"></svg>
+      <svg class="decor crisp" id="hero-vine-r" style="right:14px; top:6px; transform:scaleX(-1);"></svg>
+      <svg class="decor crisp" id="hero-tree" style="right:8px; bottom:-6px; opacity:.16;"></svg>
+      <svg class="decor crisp" id="bloom-hero" style="left:2px; bottom:-4px; filter:drop-shadow(1px 2px 0 rgba(32,48,29,.10));"></svg>
+      <div class="bee-wrap"><svg class="crisp" id="bee-svg" width="120" height="140" viewBox="0 0 17 19"></svg></div>
+      <div class="constellation">
+        <div class="ring-grid">
+          <div class="ring-bar"><div class="ring-label"><span>Emissions</span><span class="mono">82</span></div><div class="ring-track" id="emis-track"></div></div>
+          <div class="ring-bar"><div class="ring-label"><span>Energy</span><span class="mono">78</span></div><div class="ring-track" id="energy-track"></div></div>
+          <div class="ring-bar"><div class="ring-label"><span>Water</span><span class="mono">74</span></div><div class="ring-track" id="water-track"></div></div>
+          <div class="ring-bar"><div class="ring-label"><span>Waste</span><span class="mono">80</span></div><div class="ring-track" id="waste-track"></div></div>
+        </div>
+        <div class="composite"><div class="score" id="composite-score">0</div><div class="lbl">environmental</div><div class="sub">▲ 3 pts / mo</div></div>
+      </div>
+    </div>
+
+    <div class="kpi-row card">
+      <div class="kpi"><div class="lbl">CO2e avoided</div><div class="val">1,284 t</div><div class="delta" style="color:var(--env-strong)">▲ 4.2%</div><div class="spark" id="spark1"></div></div>
+      <div class="kpi"><div class="lbl">Scope 1</div><div class="val">46 t</div><div class="delta" style="color:var(--env-strong)">▼ 7.2%</div><div class="spark" id="spark2"></div></div>
+      <div class="kpi"><div class="lbl">Scope 2</div><div class="val">27 t</div><div class="delta" style="color:var(--env-strong)">▼ 5.6%</div><div class="spark" id="spark3"></div></div>
+      <div class="kpi"><div class="lbl">Scope 3</div><div class="val">108 t</div><div class="delta" style="color:var(--env-strong)">▼ 8.1%</div><div class="spark" id="spark4"></div></div>
+      <div class="kpi"><div class="lbl">Renewable</div><div class="val">42%</div><div class="delta" style="color:var(--env-strong)">▲ 5.4%</div><div class="spark" id="spark5"></div></div>
+      <div class="kpi"><div class="lbl">Waste diverted</div><div class="val">73%</div><div class="delta" style="color:var(--env-strong)">▲ 2.8%</div><div class="spark" id="spark6"></div></div>
+    </div>
+
+    <div class="card trend-full" style="padding:18px;">
+      <div class="section-title disp"><svg class="crisp" width="12" height="12" viewBox="0 0 9 9" id="leaf-1"></svg>9-month emissions footprint</div>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--scope1);"></i>Scope 1 · direct</span>
+        <span><i class="dot" style="background:var(--scope2);"></i>Scope 2 · purchased energy</span>
+        <span><i class="dot" style="background:var(--scope3);"></i>Scope 3 · value chain</span>
+      </div>
+      <svg width="100%" height="180" viewBox="0 0 460 180" id="stack-svg"></svg>
+    </div>
+
+    <div class="row3">
+      <div class="card" style="padding:18px;">
+        <div class="section-title disp"><svg class="crisp" width="12" height="12" viewBox="0 0 9 9" id="leaf-2"></svg>Facility leaderboard</div>
+        <div id="lb-list"></div>
+      </div>
+      <div class="card donut-card">
+        <div class="section-title disp"><svg class="crisp" width="12" height="12" viewBox="0 0 9 9" id="leaf-3"></svg>Emissions by category</div>
+        <div class="donut-row">
+          <svg width="130" height="130" viewBox="0 0 130 130" id="donut-svg"></svg>
+          <div class="donut-legend" id="donut-legend"></div>
+        </div>
+      </div>
+      <div class="card" style="padding:18px;">
+        <div class="section-title disp"><svg class="crisp" width="12" height="12" viewBox="0 0 9 9" id="leaf-4"></svg>Resource intensity</div>
+        <div class="section-sub">vs FY24 baseline = 100</div>
+        <div id="intensity-list"></div>
+      </div>
+    </div>
+
+    <div class="activity card">
+      <div class="section-title disp"><svg class="crisp" width="12" height="12" viewBox="0 0 9 9" id="leaf-5"></svg>Recent initiatives</div>
+      <div id="activity-list"></div>
+    </div>
+  </main>
+
+  <aside class="dock" aria-label="Player status">
+    <svg class="decor crisp" id="dock-vine" style="left:2px; top:0;"></svg>
+    <svg class="decor crisp" id="dock-tree" style="right:8px; bottom:0;"></svg>
+    <svg class="decor crisp" id="bloom-dock" style="right:78px; bottom:2px; filter:drop-shadow(1px 2px 0 rgba(32,48,29,.12));"></svg>
+
+    <div class="card-warm warm-inner">
+      <div class="level-row"><b>NET ZERO 2030</b></div>
+      <div class="xp-bar"><div class="xp-fill" id="target-fill"></div></div>
+      <div class="xp-nums"><span>42% renewable</span><span>Goal: 100%</span></div>
+    </div>
+
+    <div class="card-warm bloom warm-inner streak-card">
+      <span class="flame">🔥</span>
+      <div><div class="streak-num">18-day streak</div><div class="streak-sub">Sites logging daily readings</div></div>
+    </div>
+
+    <div class="card" style="padding:14px;">
+      <h3>Resource wallet</h3>
+      <div class="wallet-row"><span class="wallet-icon" style="background:var(--env);"></span>Energy consumed<span class="wallet-val">184 MWh</span></div>
+      <div class="wallet-row"><span class="wallet-icon" style="background:var(--soc);"></span>Water withdrawn<span class="wallet-val">1.1 ML</span></div>
+      <div class="wallet-row"><span class="wallet-icon" style="background:var(--gold);"></span>Waste generated<span class="wallet-val">61 t</span></div>
+      <div class="wallet-row"><span class="wallet-icon" style="background:var(--gov);"></span>Offset credits retired<span class="wallet-val">320</span></div>
+    </div>
+
+    <div class="card hive-teaser" id="hive-teaser" tabindex="0" role="button" aria-label="Open The Hive for badges and quests">
+      <div class="ht-row"><div class="ht-icon">🏅</div><div><div class="ht-title">4 of 12 badges earned</div></div></div>
+      <div class="ht-sub">Carbon Cutter badge unlocks at 7-day streak</div>
+      <div class="ht-link">Open The Hive →</div>
+    </div>
+
+    <div class="card-warm warm-inner">
+      <h3 style="margin-top:0;">Active initiative</h3>
+      <div style="font-size:12.5px; color:var(--text-muted);">Solar Rooftop Rollout — 4 of 6 sites converted</div>
+      <div class="quest-bar"><div class="quest-fill" id="initiative-fill"></div></div>
+      <div class="quest-reward">Unlocks: Solar Pioneer badge + 500 pts</div>
+    </div>
+  </aside>
+</div>
+
+<script>
+/* ---------- generic pixel-grid renderer ---------- */
+function renderPixels(svgId, grid, legend, cell){
+  const svg = document.getElementById(svgId);
+  if(!svg) return;
+  let frag = '';
+  grid.forEach((row, y) => { [...row].forEach((ch, x) => { if (ch !== '.') frag += `<rect x="${x}" y="${y}" width="1" height="1" fill="${legend[ch]}"/>`; }); });
+  svg.innerHTML = frag;
+  svg.setAttribute('viewBox', `0 0 ${grid[0].length} ${grid.length}`);
+  if(cell){ svg.setAttribute('width', grid[0].length*cell); svg.setAttribute('height', grid.length*cell); }
+}
+
+/* deterministic tiny PRNG so the grove looks the same every load */
+function mulberry32(a){ return function(){ a|=0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a>>>15, 1 | a); t = t + Math.imul(t ^ t>>>7, 61 | t) ^ t; return ((t ^ t>>>14) >>> 0) / 4294967296; }; }
+
+/* ---------- procedural pixel tree ---------- */
+function genTree(w,h,seed){
+  const rng = mulberry32(seed||7);
+  const g = Array.from({length:h}, ()=> Array(w).fill('.'));
+  const trunkW = Math.max(2, Math.floor(w*0.16));
+  const trunkH = Math.floor(h*0.30);
+  const cx = w/2;
+  for(let y=h-trunkH; y<h; y++){ for(let x=Math.floor(cx-trunkW/2); x<Math.ceil(cx+trunkW/2); x++){ if(x>=0&&x<w) g[y][x]='T'; } }
+  const canopyH = h - trunkH + 2;
+  const cy = canopyH*0.55, rx = w*0.47, ry = canopyH*0.5;
+  for(let y=0;y<canopyH;y++){ for(let x=0;x<w;x++){
+    const dx=(x-cx)/rx, dy=(y-cy)/ry, d = dx*dx+dy*dy;
+    if(d<=1){ let shade = d>0.72 ? 'D' : (rng()<0.14 ? 'H' : 'L'); if(rng()<0.05) shade='F'; g[y][x]=shade; }
+  }}
+  return g.map(r=>r.join(''));
+}
+
+/* ---------- procedural pixel vine: tight spring curl + pink blossoms ---------- */
+function genVine(h, w, seed){
+  w = w||4;
+  const rng = mulberry32(seed||3);
+  const g = Array.from({length:h}, ()=> Array(w).fill('.'));
+  let x = Math.floor(w/2), dir = rng()<0.5?1:-1;
+  for(let y=0;y<h;y++){
+    g[y][x]='S';
+    if(y%2===1){ x += dir; if(x<=0||x>=w-1) dir*=-1; x = Math.max(0, Math.min(w-1,x)); }
+    if(y%3===1){
+      const side = dir*-1;
+      const lx = Math.max(0, Math.min(w-1, x+side));
+      if(g[y][lx]==='.') g[y][lx] = (y%9===1) ? 'F' : 'L';
+      if(y%9===1 && y+1<h){ const lx2 = Math.max(0, Math.min(w-1, lx+side)); if(g[y+1][lx2]==='.') g[y+1][lx2]='f'; }
+    }
+  }
+  return g.map(r=>r.join(''));
+}
+
+/* ---------- large detailed pixel flower (bloom decoration) ---------- */
+function genFlower(size, seed){
+  const g = Array.from({length:size}, ()=> Array(size).fill('.'));
+  const cx=size/2, cy=size/2, petals=5, petalR=size*0.24, dist=size*0.27;
+  for(let p=0;p<petals;p++){
+    const ang = (Math.PI*2/petals)*p - Math.PI/2;
+    const px = cx + Math.cos(ang)*dist, py = cy + Math.sin(ang)*dist;
+    for(let y=0;y<size;y++){ for(let x=0;x<size;x++){
+      const dx=x-px, dy=y-py, d=Math.sqrt(dx*dx+dy*dy);
+      if(d<=petalR && g[y][x]==='.'){ g[y][x] = d<petalR*0.55 ? 'p' : (d>petalR*0.88 ? 'e' : 'P'); }
+    }}
+  }
+  const cR = size*0.15;
+  for(let y=0;y<size;y++){ for(let x=0;x<size;x++){
+    const dx=x-cx, dy=y-cy, d=Math.sqrt(dx*dx+dy*dy);
+    if(d<=cR){ g[y][x] = d>cR*0.55 ? 'c' : 'C'; }
+  }}
+  return g.map(r=>r.join(''));
+}
+const flowerLegend = {P:'#F76FA6', p:'#C6437F', e:'#FBD0E2', C:'#FFDF82', c:'#D9A430'};
+renderPixels('bloom-hero', genFlower(19,51), flowerLegend, 3);
+renderPixels('bloom-side', genFlower(21,52), flowerLegend, 3);
+renderPixels('bloom-dock', genFlower(21,53), flowerLegend, 3);
+const vineLegend = {S:'#5C7A3E', L:'#3C8A34', F:'#F781AE', f:'#FBB4CE'};
+const treeLegend = {L:'#3C8A34', D:'#245F21', H:'#8FC46A', T:'#6B4423', F:'#F781AE'};
+
+renderPixels('side-vine', genVine(70,4,11), vineLegend, 5);
+renderPixels('side-tree', genTree(16,20,4), treeLegend, 6);
+renderPixels('dock-vine', genVine(70,4,17), vineLegend, 5);
+renderPixels('dock-tree', genTree(14,18,9), treeLegend, 6);
+renderPixels('hero-vine-l', genVine(12,4,21), vineLegend, 5);
+renderPixels('hero-vine-r', genVine(12,4,23), vineLegend, 5);
+renderPixels('hero-tree', genTree(11,13,31), treeLegend, 9);
+renderPixels('main-tree', genTree(20,26,42), treeLegend, 12);
+['hero-vine-l','hero-vine-r'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.opacity = .5; });
+['side-vine','dock-vine'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.opacity = .85; });
+
+/* small leaf sprig used as section-title flourish */
+const leafGrid = ["....G....","...GGG...","..GGGGG..",".GGGGGGG.","GGGGGGGGG",".GGGGGGG.","..GGGGG..","...GGG...","....G...."];
+['leaf-1','leaf-2','leaf-3','leaf-4','leaf-5'].forEach(id=> renderPixels(id, leafGrid, {G:'var(--env)'}));
+
+/* ---------- pixel bee mascot ---------- */
+const beeLegend = { K:'#1A1A1A', Y:'#FFD34D', W:'#FFFFFF', P:'#FF9EC4', B:'#BFE3FF' };
+const bee = [
+"......K...K......","......K...K......",".....KYYYYYK.....","....KYYYYYYYK....",
+"...KYYYYYYYYYK...","...KYWWYYYWWYK...","BBBKYWKYYYKWYKBBB","BBBKYYYYYYYYYKBBB",
+"BBPKYYYYYYYYYKPBB","...KYYYYYYYYYK...","...KKKKKKKKKKK...","...KYYYYYYYYYK...",
+"...KYYYYYYYYYK...","...KKKKKKKKKKK...","...KYYYYYYYYYK...","....KYYYYYYYK....",
+".....KYYYYYK.....","......K...K......",".....K.....K....."
+];
+function renderPixelsRaw(svgId, grid, legend){
+  const svg = document.getElementById(svgId);
+  if(!svg) return;
+  let frag = '';
+  grid.forEach((row, y) => { [...row].forEach((ch, x) => { if (ch !== '.') frag += `<rect x="${x}" y="${y}" width="1" height="1" fill="${legend[ch]}"/>`; }); });
+  svg.innerHTML = frag;
+}
+renderPixelsRaw('bee-svg', bee, beeLegend);
+
+/* ---------- badge icon set ---------- */
+
+/* ---------- hero performance rings ---------- */
+function buildTrackColor(id, color, value, delay){
+  const track = document.getElementById(id); const segs = 20; const on = Math.round(value/5);
+  for(let i=0;i<segs;i++){
+    const seg = document.createElement('div'); seg.className = 'ring-seg' + (i<on ? ' on' : '');
+    if(i<on){ seg.style.background = color; seg.style.animationDelay = (delay + i*20) + 'ms'; }
+    track.appendChild(seg);
+  }
+}
+buildTrackColor('emis-track', 'var(--env-strong)', 82, 700);
+buildTrackColor('energy-track', 'var(--env)', 78, 850);
+buildTrackColor('water-track', 'var(--soc)', 74, 1000);
+buildTrackColor('waste-track', 'var(--gold)', 80, 1150);
+let n=0; const compEl = document.getElementById('composite-score'); const target = 78;
+const timer = setInterval(()=>{ n+=2; if(n>=target){n=target; clearInterval(timer);} compEl.textContent = n; }, 25);
+
+/* ---------- KPI sparklines ---------- */
+const sparkData = { spark1:[38,42,45,48,52,58,61,60,64], spark2:[58,56,55,53,52,50,49,47,46], spark3:[34,33,33,32,31,30,29,28,27],
+  spark4:[142,138,133,130,126,121,117,112,108], spark5:[28,31,33,35,37,38,40,41,42], spark6:[55,58,60,63,65,68,70,72,73] };
+Object.keys(sparkData).forEach(id=>{
+  const el = document.getElementById(id); const vals = sparkData[id]; const max = Math.max(...vals), min = Math.min(...vals);
+  vals.forEach((v,i)=>{ const b = document.createElement('b'); const pct = 25 + ((v-min)/(max-min||1))*75;
+    setTimeout(()=>{ b.style.transition='height .5s ease-out, background .3s'; b.style.height = pct+'%'; b.style.background = 'var(--env)'; }, 600+i*40);
+    el.appendChild(b); });
+});
+
+/* ---------- stacked emissions area chart (scope 1/2/3) ---------- */
+const months = ['Nov','Dec','Jan','Feb','Mar','Apr','May','Jun','Jul'];
+const scope1 = [58,56,55,53,52,50,49,47,46];
+const scope2 = [34,33,33,32,31,30,29,28,27];
+const scope3 = [142,138,133,130,126,121,117,112,108];
+const cum0 = scope3.slice();
+const cum1 = scope3.map((v,i)=> v+scope2[i]);
+const cum2 = scope3.map((v,i)=> v+scope2[i]+scope1[i]);
+const ssvg = document.getElementById('stack-svg');
+const sw=460, sh=180, spadL=30, spadR=14, spadT=14, spadB=26, smaxV=Math.max(...cum2)*1.12, sminV=0;
+const sStepX = (sw-spadL-spadR)/(months.length-1);
+function sToXY(v,i){ const x=spadL+i*sStepX; const y=sh-spadB-((v-sminV)/(smaxV-sminV))*(sh-spadT-spadB); return [x,y]; }
+function smoothPath(pts){
+  let d = `M ${pts[0][0]} ${pts[0][1]}`;
+  for(let i=0;i<pts.length-1;i++){ const [x0,y0]=pts[i], [x1,y1]=pts[i+1]; const mx=(x0+x1)/2; d += ` C ${mx} ${y0}, ${mx} ${y1}, ${x1} ${y1}`; }
+  return d;
+}
+function areaBetween(lowerPts, upperPts){
+  let d = `M ${lowerPts[0][0]} ${lowerPts[0][1]}`;
+  for(let i=0;i<lowerPts.length-1;i++){ const [x0,y0]=lowerPts[i], [x1,y1]=lowerPts[i+1]; const mx=(x0+x1)/2; d += ` C ${mx} ${y0}, ${mx} ${y1}, ${x1} ${y1}`; }
+  const rev = upperPts.slice().reverse();
+  for(let i=0;i<rev.length;i++){ d += ` L ${rev[i][0]} ${rev[i][1]}`; }
+  d += ' Z';
+  return d;
+}
+let sfrag='';
+[0, Math.round(smaxV*0.25), Math.round(smaxV*0.5), Math.round(smaxV*0.75), Math.round(smaxV)].forEach(v=>{
+  const y = sh-spadB-((v-sminV)/(smaxV-sminV))*(sh-spadT-spadB);
+  sfrag += `<line x1="${spadL}" y1="${y}" x2="${sw-spadR}" y2="${y}" stroke="#00000012" stroke-width="1"/>`;
+  sfrag += `<text x="${spadL-6}" y="${y+4}" font-size="10.5" text-anchor="end" fill="#8E9982" font-family="IBM Plex Mono">${v}</text>`;
+});
+const base = months.map((m,i)=> [spadL+i*sStepX, sh-spadB]);
+const p0 = cum0.map(sToXY), p1 = cum1.map(sToXY), p2 = cum2.map(sToXY);
+sfrag += `<path d="${areaBetween(base,p0)}" fill="var(--scope3)" opacity="0.85"/>`;
+sfrag += `<path d="${areaBetween(p0,p1)}" fill="var(--scope2)" opacity="0.9"/>`;
+sfrag += `<path d="${areaBetween(p1,p2)}" fill="var(--scope1)" opacity="0.95"/>`;
+sfrag += `<path d="${smoothPath(p2)}" fill="none" stroke="#20301D" stroke-width="1.5" opacity="0.35"/>`;
+p2.forEach((p,i)=>{ sfrag += `<text x="${p[0]}" y="${p[1]-8}" font-size="10" text-anchor="middle" fill="#20301D" font-family="IBM Plex Mono">${cum2[i]}</text>`; });
+months.forEach((m,i)=>{ const [x]=sToXY(cum2[i],i); sfrag += `<text x="${x}" y="${sh-8}" font-size="11" text-anchor="middle" fill="#8E9982" font-family="Inter">${m}</text>`; });
+ssvg.innerHTML = sfrag;
+
+/* ---------- facility leaderboard ---------- */
+const lb = [
+  {dept:"Pune HQ", score:91, color:'var(--gold)'}, {dept:"Bengaluru DC", score:84, color:'var(--env)'},
+  {dept:"Chennai Plant", score:79, color:'var(--env)'}, {dept:"Hyderabad Office", score:75, color:'var(--env)'},
+  {dept:"Mumbai Warehouse", score:70, color:'var(--env)'}, {dept:"Gurugram Office", score:66, color:'var(--env)'},
+  {dept:"Kolkata Retail Hub", score:61, color:'var(--env)'}, {dept:"Ahmedabad Warehouse", score:57, color:'var(--env)'},
+];
+const lbList = document.getElementById('lb-list');
+lb.forEach((d,i)=>{ const row = document.createElement('div'); row.className='lb-row';
+  row.innerHTML = `<span class="lb-rank">${i+1}</span><span class="lb-name">${d.dept}</span><div class="lb-track"><div class="lb-fill" style="background:${d.color};"></div></div><span class="lb-score">${d.score}</span>`;
+  lbList.appendChild(row); setTimeout(()=>{ row.querySelector('.lb-fill').style.width = d.score+'%'; }, 500+i*80); });
+
+/* ---------- emissions-by-category donut ---------- */
+const donutData = [
+  {name:"Electricity", value:36, color:'var(--scope1)'},
+  {name:"Fuel & fleet", value:26, color:'var(--scope2)'},
+  {name:"Business travel", value:14, color:'var(--scope3)'},
+  {name:"Waste", value:11, color:'var(--gold)'},
+  {name:"Water", value:8, color:'var(--soc)'},
+  {name:"Other", value:5, color:'var(--border)'},
+];
+function buildDonut(svgId, data, cx, cy, r, strokeW){
+  const svg = document.getElementById(svgId);
+  const circumference = 2*Math.PI*r;
+  let offsetAcc = 0;
+  let frag = `<g transform="rotate(-90 ${cx} ${cy})">`;
+  data.forEach(d=>{
+    const len = (d.value/100)*circumference;
+    frag += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${d.color}" stroke-width="${strokeW}" stroke-dasharray="${len} ${circumference-len}" stroke-dashoffset="${-offsetAcc}"/>`;
+    offsetAcc += len;
+  });
+  frag += `</g>`;
+  frag += `<text x="${cx}" y="${cy-4}" text-anchor="middle" class="donut-center-val">395t</text>`;
+  frag += `<text x="${cx}" y="${cy+12}" text-anchor="middle" class="donut-center-lbl">total / mo</text>`;
+  svg.innerHTML = frag;
+}
+buildDonut('donut-svg', donutData, 65, 65, 48, 20);
+const donutLegendEl = document.getElementById('donut-legend');
+donutData.forEach(d=>{ const row = document.createElement('div'); row.className='donut-legend-item';
+  row.innerHTML = `<span class="dot" style="background:${d.color};"></span><span class="dname">${d.name}</span><span class="dpct mono">${d.value}%</span>`;
+  donutLegendEl.appendChild(row); });
+
+/* ---------- resource intensity vs baseline ---------- */
+const intensity = [
+  {name:"Emissions intensity", val:78, color:'var(--env-strong)'},
+  {name:"Energy intensity", val:84, color:'var(--env)'},
+  {name:"Water intensity", val:88, color:'var(--soc)'},
+  {name:"Waste intensity", val:81, color:'var(--gold)'},
+];
+const intensityEl = document.getElementById('intensity-list');
+intensity.forEach((d,i)=>{ const row = document.createElement('div'); row.className='lb-row';
+  row.innerHTML = `<span class="lb-name">${d.name}</span><div class="lb-track" style="width:120px;"><div class="lb-fill" style="background:${d.color};"></div></div><span class="lb-score" style="width:34px;">${d.val}</span>`;
+  intensityEl.appendChild(row); setTimeout(()=>{ row.querySelector('.lb-fill').style.width = d.val+'%'; }, 500+i*100); });
+
+/* ---------- recent initiatives feed ---------- */
+const activity = [
+  {who:"PS", text:"completed the Solar Rooftop install at Chennai Plant", color:'var(--env)', xp:"+120 XP", time:"1h ago"},
+  {who:"MS", text:"submitted the Q2 water usage report", color:'var(--soc)', xp:"+15 XP", time:"4h ago"},
+  {who:"RM", text:"closed the Pune HQ waste-audit finding", color:'var(--gold)', xp:"+30 XP", time:"6h ago"},
+  {who:"DJ", text:"logged an EV fleet swap — 6 vehicles converted", color:'var(--env)', xp:"+45 XP", time:"9h ago"},
+  {who:"TN", text:"retired 40 carbon offset credits", color:'var(--env-strong)', xp:"+25 XP", time:"1d ago"},
+  {who:"VK", text:"completed the LED retrofit for Building 3", color:'var(--env)', xp:"+35 XP", time:"1d ago"},
+  {who:"NR", text:"passed the Ahmedabad rainwater-harvesting audit", color:'var(--soc)', xp:"+20 XP", time:"2d ago"},
+  {who:"AK", text:"hit a 30-day sustainability streak", color:'var(--bloom)', xp:"+60 XP", time:"2d ago"},
+];
+const actList = document.getElementById('activity-list');
+activity.forEach(a=>{ const row = document.createElement('div'); row.className='act-row';
+  row.innerHTML = `<div class="act-avatar">${a.who}</div><span class="act-dot" style="background:${a.color};"></span><span class="act-text"><b>${a.who}</b> ${a.text}</span><span class="act-xp">${a.xp}</span><span class="act-time">${a.time}</span>`;
+  actList.appendChild(row); });
+
+setTimeout(()=>{ document.getElementById('target-fill').style.width='42%'; }, 500);
+document.getElementById('hive-teaser').addEventListener('click', ()=> showToast('Opening The Hive…'));
+document.getElementById('hive-teaser').addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); showToast('Opening The Hive…'); } });
+setTimeout(()=>{ document.getElementById('initiative-fill').style.width='67%'; }, 700);
+
+/* ============ FUNCTIONALITY LAYER: dropdowns, keyboard, toast, notifications ============ */
+(function(){
+  const notifications = [
+    { title:"Emissions target on track", body:"Scope 1 emissions down 7.2% this quarter.", time:"20m ago", read:false },
+    { title:"Solar Rooftop milestone", body:"4 of 6 sites converted — 2 remaining.", time:"2h ago", read:false },
+    { title:"Facility report due", body:"Ahmedabad Warehouse energy report is due Friday.", time:"5h ago", read:false },
+    { title:"Renewable share up", body:"Renewable energy share crossed 42% this month.", time:"1d ago", read:true },
+  ];
+  const notifList = document.getElementById('notif-list');
+  const notifDot = document.getElementById('notif-dot');
+  function renderNotifs(){
+    if(!notifList) return;
+    notifList.innerHTML = '';
+    notifications.forEach((n,i)=>{
+      const row = document.createElement('div');
+      row.className = 'notif-item' + (n.read ? ' read' : '');
+      row.setAttribute('role','menuitem'); row.tabIndex = 0;
+      row.innerHTML = `<span class="dot"></span><span class="body"><b>${n.title}</b><span>${n.body}</span></span><span class="time">${n.time}</span>`;
+      const markRead = ()=>{ n.read = true; renderNotifs(); };
+      row.addEventListener('click', markRead);
+      row.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); markRead(); } });
+      notifList.appendChild(row);
+    });
+    const unread = notifications.filter(n=>!n.read).length;
+    if(notifDot){ notifDot.textContent = unread; notifDot.classList.toggle('hidden', unread===0); }
+  }
+  renderNotifs();
+  document.getElementById('notif-mark-all')?.addEventListener('click', ()=>{ notifications.forEach(n=>n.read=true); renderNotifs(); showToast('All notifications marked as read'); });
+
+  /* ---------- generic dropdown open/close, escape, click-outside ---------- */
+  function wireDropdown(btnId, panelId){
+    const btn = document.getElementById(btnId), panel = document.getElementById(panelId);
+    if(!btn || !panel) return;
+    function close(){ panel.classList.remove('open'); panel.setAttribute('aria-hidden','true'); btn.setAttribute('aria-expanded','false'); }
+    function open(){ closeAllDropdowns(); panel.classList.add('open'); panel.setAttribute('aria-hidden','false'); btn.setAttribute('aria-expanded','true'); }
+    btn.addEventListener('click', e=>{ e.stopPropagation(); panel.classList.contains('open') ? close() : open(); });
+    panel._close = close;
+  }
+  function closeAllDropdowns(){ document.querySelectorAll('.dropdown-panel.open').forEach(p=> p._close && p._close()); }
+  wireDropdown('notif-btn','notif-panel');
+  wireDropdown('avatar-btn','user-panel');
+  document.addEventListener('click', closeAllDropdowns);
+  document.querySelectorAll('.dropdown-panel').forEach(p=> p.addEventListener('click', e=> e.stopPropagation()));
+  document.addEventListener('keydown', e=>{ if(e.key === 'Escape') closeAllDropdowns(); });
+
+  wireDropdown('role-btn','role-panel');
+  document.querySelectorAll('#role-panel .dropdown-item').forEach(item=>{
+    item.addEventListener('click', ()=>{
+      const role = item.dataset.role;
+      document.getElementById('role-val').textContent = role;
+      document.getElementById('role-btn').setAttribute('aria-label', 'Role switcher, currently ' + role);
+      showToast('Switched to ' + role + ' view');
+      closeAllDropdowns();
+    });
+  });
+
+  /* user menu items just confirm via toast (no backend in this mockup) */
+  document.querySelectorAll('#user-panel .dropdown-item').forEach(item=>{
+    item.addEventListener('click', ()=>{ showToast(item.textContent + ' — coming soon'); closeAllDropdowns(); });
+  });
+
+  /* ---------- search: ⌘K / Ctrl+K focuses it, Enter shows a toast ---------- */
+  const searchBox = document.querySelector('.search');
+  if(searchBox){
+    searchBox.addEventListener('click', ()=> showToast('Search — coming soon'));
+    searchBox.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); showToast('Search — coming soon'); } });
+  }
+  document.addEventListener('keydown', e=>{
+    if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); searchBox?.focus(); showToast('Search — coming soon'); }
+  });
+
+  /* ---------- nav items: Enter/Space activates, like a click ---------- */
+  document.querySelectorAll('.nav-item[role="link"]').forEach(item=>{
+    item.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); item.click(); } });
+  });
+
+  /* ---------- xp pill: keyboard activation shows a toast with level detail ---------- */
+  document.querySelectorAll('.xp-pill[role="button"]').forEach(pill=>{
+    const act = ()=> showToast('Level 14 — 660 XP to Level 15');
+    pill.addEventListener('click', act);
+    pill.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); act(); } });
+  });
+
+  /* ---------- toast system ---------- */
+  let stack = document.querySelector('.toast-stack');
+  if(!stack){ stack = document.createElement('div'); stack.className='toast-stack'; stack.setAttribute('aria-live','polite'); document.body.appendChild(stack); }
+  window.showToast = function(msg, ms){
+    ms = ms || 2600;
+    const t = document.createElement('div');
+    t.className = 'toast'; t.textContent = msg; t.setAttribute('role','status');
+    stack.appendChild(t);
+    requestAnimationFrame(()=> t.classList.add('show'));
+    setTimeout(()=>{ t.classList.remove('show'); setTimeout(()=> t.remove(), 220); }, ms);
+  };
+
+  /* ---------- badges: keyboard-focusable, locked ones explain themselves ---------- */
+  document.querySelectorAll('.badge, .gal-badge').forEach(b=>{
+    b.tabIndex = 0;
+    b.setAttribute('role','button');
+    const isLocked = b.classList.contains('locked');
+    b.setAttribute('aria-label', isLocked ? 'Locked badge — keep going to unlock' : 'Earned badge');
+    const act = ()=> showToast(isLocked ? 'Locked — keep going to unlock this badge' : 'Badge earned!');
+    b.addEventListener('click', act);
+    b.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); act(); } });
+  });
+})();
+
+
+/* ---------- generic click/keyboard affordance for remaining static elements ---------- */
+(function(){
+  function wireList(selector, label){
+    document.querySelectorAll(selector).forEach(el=>{
+      if(el.hasAttribute('data-wired')) return;
+      el.setAttribute('data-wired','1');
+      el.tabIndex = 0;
+      el.setAttribute('role','button');
+      const act = ()=> showToast((label || 'Open') + ' — coming soon');
+      el.addEventListener('click', act);
+      el.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); act(); } });
+    });
+  }
+  wireList('.lb-row', 'View facility detail');
+  wireList('.act-row', 'View activity detail');
+  wireList('.kpi', 'View metric detail');
+  document.querySelectorAll('.btn').forEach(el=>{
+    if(el.hasAttribute('data-wired')) return;
+    el.setAttribute('data-wired','1');
+    el.tabIndex = 0; el.setAttribute('role','button');
+    const act = ()=> showToast((el.textContent||'').trim() + ' — coming soon');
+    el.addEventListener('click', act);
+    el.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); act(); } });
+  });
+})();
+
+</script>
+</body>
+</html>

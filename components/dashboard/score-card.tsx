@@ -12,9 +12,10 @@ interface ScoreCardProps {
   trend?: 'up' | 'down' | 'stable';
   icon: any;
   color: 'emerald' | 'cyan' | 'purple' | 'amber';
+  onExplain?: () => void;
 }
 
-export function ScoreCard({ title, score, weight, trend, icon: Icon, color }: ScoreCardProps) {
+export function ScoreCard({ title, score, weight, trend, icon: Icon, color, onExplain }: ScoreCardProps) {
   const getGradient = () => {
     switch (color) {
       case 'emerald':
@@ -90,7 +91,20 @@ export function ScoreCard({ title, score, weight, trend, icon: Icon, color }: Sc
             </div>
           )}
         </div>
+
+        {onExplain && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onExplain();
+            }}
+            className="mt-4 flex w-full items-center justify-center gap-1 rounded-md border border-black/10 bg-black/5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#41493e] transition-colors hover:bg-black/10"
+          >
+            Explain This
+          </button>
+        )}
       </CardContent>
     </Card>
+
   );
 }

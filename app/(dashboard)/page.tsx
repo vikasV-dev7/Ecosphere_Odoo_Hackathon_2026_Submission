@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { ScoreCard } from '@/components/dashboard/score-card';
+import { ScoreSimulator } from '@/components/dashboard/score-simulator';
+import { ScoreExplainDrawer } from '@/components/dashboard/score-explain-drawer';
 import { useAuthStore } from '@/stores/use-auth-store';
 import { useOrgStore } from '@/stores/use-org-store';
 import { useEnvironmentalStore } from '@/stores/use-environmental-store';
@@ -61,7 +63,12 @@ export default function OverviewDashboard() {
     return () => clearInterval(timer);
   }, []);
 
+  const [explainDrawerOpen, setExplainDrawerOpen] = React.useState(false);
+  const [explainCategory, setExplainCategory] = React.useState<string>('environmental');
+
   if (!currentUser) return null;
+
+  const userDeptId = currentUser.departmentId || departments[0]?.id;
 
   // Calculate scores dynamically using ScoringService
   const orgScore = ScoringService.getOrgOverviewScore();
@@ -161,6 +168,10 @@ export default function OverviewDashboard() {
           trend="up" 
           icon={Activity} 
           color="amber" 
+          onExplain={() => {
+            setExplainCategory('aggregate');
+            setExplainDrawerOpen(true);
+          }}
         />
         <ScoreCard 
           title="Environmental Score" 
@@ -169,6 +180,10 @@ export default function OverviewDashboard() {
           trend="up" 
           icon={Leaf} 
           color="emerald" 
+          onExplain={() => {
+            setExplainCategory('environmental');
+            setExplainDrawerOpen(true);
+          }}
         />
         <ScoreCard 
           title="Social Score" 
@@ -177,6 +192,10 @@ export default function OverviewDashboard() {
           trend="stable" 
           icon={Users} 
           color="cyan" 
+          onExplain={() => {
+            setExplainCategory('social');
+            setExplainDrawerOpen(true);
+          }}
         />
         <ScoreCard 
           title="Governance Score" 
@@ -185,6 +204,10 @@ export default function OverviewDashboard() {
           trend="down" 
           icon={ShieldAlert} 
           color="purple" 
+          onExplain={() => {
+            setExplainCategory('governance');
+            setExplainDrawerOpen(true);
+          }}
         />
       </div>
 
@@ -360,6 +383,21 @@ export default function OverviewDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Score Simulator */}
+      {activeRole === 'Admin' && (
+        <div className="pt-6 border-t border-[#e8e3cb]/50">
+          <ScoreSimulator departments={departments} />
+        </div>
+      )}
+
+      {/* Drawers */}
+      <ScoreExplainDrawer 
+        isOpen={explainDrawerOpen} 
+        onClose={() => setExplainDrawerOpen(false)} 
+        departmentId={userDeptId} 
+        category={explainCategory} 
+      />
     </div>
   );
 }

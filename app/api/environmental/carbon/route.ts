@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { fallbackDb } from '@/lib/db-fallback';
+import { updateScorePipeline } from '@/app/api/scores/calculate/route';
 
 export async function GET(req: Request) {
   const isOnline = !!process.env.DATABASE_URL;
@@ -99,7 +100,8 @@ export async function POST(req: Request) {
       });
 
       // Trigger score pipeline calculation in background
-      await updateScorePipeline(departmentId, isOnline);
+      const period = new Date().toISOString().substring(0, 7);
+      await updateScorePipeline(departmentId, isOnline, period);
 
     } else {
       const factors = fallbackDb.getFactors();
@@ -128,8 +130,8 @@ export async function POST(req: Request) {
       newTx = enriched;
 
       // Trigger score pipeline calculation in background
-      await updateScorePipeline(departmentId, isOnline);
-    }
+      const period = new Date().toISOString().substring(0, 7);
+      await updateScorePipeline(departmentId, isOnline, period);    }
 
     return NextResponse.json(newTx);
   } catch (e: any) {
@@ -137,77 +139,3 @@ export async function POST(req: Request) {
   }
 }
 
-// Score recalculation helper validating the pipeline
-async function updateScorePipeline(departmentId: string, isOnline: boolean) {
-  const period = new Date().toISOString().substring(0, 7); // YYYY-MM
-
-  try {
-    let carbonTotal = 0;
-    let targetBaseline = 10000; // default baseline
-
-    if (isOnline) {
-      // 1. Get total emissions for department this month
-      const transactions = await prisma.carbonTransaction.findMany({
-        where: { departmentId },
-      });
-      carbonTotal = transactions.reduce((sum, t) => sum + t.totalEmissions, 0);
-
-      // 2. Get active goals
-      const goals = await prisma.goal.findMany({
-        where: { departmentId, status: 'Active' },
-      });
-      if (goals.length > 0) {
-        targetBaseline = goals.reduce((sum, g) => sum + g.targetValue, 0);
-      }
-
-      // 3. Compute Environmental Score
-      const environmentalScore = Math.max(0, Math.min(100, 100 - (carbonTotal / targetBaseline * 100)));
-
-      // 4. Upsert DepartmentScore
-      const existingScore = await prisma.departmentScore.findFirst({
-        where: { departmentId, period },
-      });
-
-      if (existingScore) {
-        await prisma.departmentScore.update({
-          where: { id: existingScore.id },
-          data: {
-            carbonTotal,
-            environmentalScore,
-            totalScore: environmentalScore * 0.4, // Environment weight is 40%
-          },
-        });
-      } else {
-        await prisma.departmentScore.create({
-          data: {
-            departmentId,
-            period,
-            environmentalScore,
-            totalScore: environmentalScore * 0.4,
-            carbonTotal,
-          },
-        });
-      }
-    } else {
-      const transactions = fallbackDb.getTransactions().filter((t: any) => t.departmentId === departmentId);
-      carbonTotal = transactions.reduce((sum: number, t: any) => sum + t.totalEmissions, 0);
-
-      const goals = fallbackDb.getGoals().filter((g: any) => g.departmentId === departmentId && g.status === 'Active');
-      if (goals.length > 0) {
-        targetBaseline = goals.reduce((sum: number, g: any) => sum + g.targetValue, 0);
-      }
-
-      const environmentalScore = Math.max(0, Math.min(100, 100 - (carbonTotal / targetBaseline * 100)));
-
-      fallbackDb.upsertDepartmentScore({
-        departmentId,
-        period,
-        environmentalScore,
-        totalScore: environmentalScore * 0.4,
-        carbonTotal,
-      });
-    }
-  } catch (err) {
-    console.error('Failed to update scoring pipeline:', err);
-  }
-}

@@ -253,6 +253,7 @@ model DepartmentScore {
   totalScore         Float    @default(0)
   carbonTotal        Float    @default(0)
   createdAt          DateTime @default(now())
+  breakdowns         ScoreBreakdown[]
 }
 
 model Policy {
@@ -308,4 +309,24 @@ model ComplianceIssue {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   audit       Audit    @relation(fields: [auditId], references: [id])
+}
+
+model ScoreBreakdown {
+  id                String          @id @default(uuid())
+  departmentScoreId String
+  departmentScore   DepartmentScore @relation(fields: [departmentScoreId], references: [id])
+  category          String          // environmental, social, governance
+  metricName        String
+  metricValue       Float
+  baselineValue     Float
+  impactPoints      Float
+  weight            Float
+  trend             String          // up, down, stable
+  sourceTable       String
+  sourceIds         String[]
+  sourceUrl         String?         // Computed link to relevant data view
+  period            String
+  createdAt         DateTime        @default(now())
+
+  @@map("score_breakdowns")
 }

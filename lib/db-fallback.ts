@@ -51,6 +51,7 @@ const SEED_DATA = {
     { id: 'ds-2', departmentId: 'dept-esg', period: '2026-07', environmentalScore: 98, socialScore: 95, governanceScore: 96, totalScore: 97, carbonTotal: 360 }
   ],
   scoreBreakdowns: [],
+  savedReports: [],
   configs: [
     { id: 'singleton', orgName: 'EcoSphere Corp', envWeight: 0.4, socialWeight: 0.3, govWeight: 0.3, autoEmissionCalc: true, evidenceRequired: true, autoBadgeAward: true, pushNotifications: true, emailNotifications: true }
   ],
@@ -561,5 +562,14 @@ export const fallbackDb = {
       db.scoreBreakdowns.push(...breakdowns);
       saveFallbackDb(db);
     }
+  },
+
+  // Saved Reports
+  getSavedReports: () => getFallbackDb().savedReports || [],
+  saveReport: (report: any) => {
+    const db = getFallbackDb();
+    if (!db.savedReports) db.savedReports = [];
+    db.savedReports.unshift(report);
+    saveFallbackDb(db);
   }
 };

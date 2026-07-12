@@ -330,3 +330,13 @@ model ScoreBreakdown {
 
   @@map("score_breakdowns")
 }
+
+model SavedReport {
+  id          String   @id @default(uuid())
+  userId      String
+  name        String
+  config      Json     // { type, departmentId, startDate, endDate, filters }
+  createdAt   DateTime @default(now())
+
+  @@map("saved_reports")
+}

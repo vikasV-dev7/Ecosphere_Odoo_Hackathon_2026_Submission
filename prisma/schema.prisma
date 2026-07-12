@@ -26,6 +26,7 @@ model Department {
   employees     Employee[]
   transactions  CarbonTransaction[]
   goals         Goal[]
+  audits        Audit[]
 }
 
 model Employee {
@@ -37,6 +38,8 @@ model Employee {
   xp                     Int                      @default(0)
   totalPoints            Int                      @default(0)
   streakDays             Int                      @default(0)
+  lastActivityDate       DateTime?
+  longestStreak          Int                      @default(0)
   avatar                 String?
   createdAt              DateTime                 @default(now())
   updatedAt              DateTime                 @updatedAt
@@ -45,6 +48,7 @@ model Employee {
   challengeParticipations ChallengeParticipation[]
   badges                 EmployeeBadge[]
   redemptions            RewardRedemption[]
+  policyAcknowledgements PolicyAcknowledgement[]
 }
 
 model Category {
@@ -142,10 +146,13 @@ model Challenge {
   categoryId       String
   description      String
   xpReward         Int
+  pointsReward     Int                      @default(0)
   difficulty       String                   @default("Easy") // Easy, Medium, Hard
+  progressType     String                   @default("counter") // counter, percentage, boolean, submission
+  targetValue      Int                      @default(1)
   evidenceRequired Boolean                  @default(true)
   deadline         DateTime?
-  status           String                   @default("Active") // Draft, Active, Completed, Archived
+  status           String                   @default("Draft") // Draft, Active, UnderReview, Completed, Archived
   createdAt        DateTime                 @default(now())
   updatedAt        DateTime                 @updatedAt
   category         Category                 @relation(fields: [categoryId], references: [id])
@@ -153,18 +160,19 @@ model Challenge {
 }
 
 model ChallengeParticipation {
-  id             String    @id @default(uuid())
-  challengeId    String
-  employeeId     String
-  progress       Float     @default(0)
-  proof          String?
-  proofData      String?   @db.Text
+  id            String    @id @default(uuid())
+  challengeId   String
+  employeeId    String
+  progress      Float     @default(0)
+  proof         String?
+  proofData     String?   @db.Text
   approvalStatus String    @default("InProgress") // InProgress, Submitted, Approved, Rejected
-  xpAwarded      Int       @default(0)
-  completedAt    DateTime?
-  createdAt      DateTime  @default(now())
-  challenge      Challenge @relation(fields: [challengeId], references: [id])
-  employee       Employee  @relation(fields: [employeeId], references: [id])
+  xpAwarded     Int       @default(0)
+  pointsAwarded Int       @default(0)
+  completedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  challenge     Challenge @relation(fields: [challengeId], references: [id])
+  employee      Employee  @relation(fields: [employeeId], references: [id])
 }
 
 model Badge {
@@ -212,9 +220,9 @@ model RewardRedemption {
 }
 
 model Notification {
-  id        String   @id @default(uuid())
-  userId    String
-  type      String   // badge_unlock, compliance_issue, csr_approval, policy_reminder
+  id         String   @id @default(uuid())
+  employeeId String
+  type       String   // badge_unlock, compliance_issue, csr_approval, policy_reminder
   title     String
   message   String
   read      Boolean  @default(false)
@@ -245,4 +253,59 @@ model DepartmentScore {
   totalScore         Float    @default(0)
   carbonTotal        Float    @default(0)
   createdAt          DateTime @default(now())
+}
+
+model Policy {
+  id               String                 @id @default(uuid())
+  title            String
+  content          String
+  version          String
+  effectiveDate    DateTime
+  status           String                 @default("Active") // Active, Archived
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  acknowledgements PolicyAcknowledgement[]
+  audits           Audit[]
+}
+
+model PolicyAcknowledgement {
+  id             String    @id @default(uuid())
+  policyId       String
+  employeeId     String
+  acknowledgedAt DateTime?
+  dueDate        DateTime
+  status         String    @default("Pending") // Pending, Acknowledged, Overdue
+  reminderSent   Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  policy         Policy    @relation(fields: [policyId], references: [id])
+  employee       Employee  @relation(fields: [employeeId], references: [id])
+}
+
+model Audit {
+  id               String            @id @default(uuid())
+  departmentId     String
+  policyId         String?
+  auditor          String
+  findings         String
+  score            Float?
+  date             DateTime
+  status           String            @default("Scheduled") // Scheduled, Completed, Cancelled
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  department       Department        @relation(fields: [departmentId], references: [id])
+  policy           Policy?           @relation(fields: [policyId], references: [id])
+  complianceIssues ComplianceIssue[]
+}
+
+model ComplianceIssue {
+  id          String   @id @default(uuid())
+  auditId     String
+  severity    String   // Low, Medium, High, Critical
+  description String
+  owner       String   // Name or Email
+  dueDate     DateTime
+  status      String   @default("Open") // Open, Resolved, Overdue
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  audit       Audit    @relation(fields: [auditId], references: [id])
 }

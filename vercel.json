@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/scores/calculate",
+      "schedule": "0 2 * * *"
+    }
+  ]
+}

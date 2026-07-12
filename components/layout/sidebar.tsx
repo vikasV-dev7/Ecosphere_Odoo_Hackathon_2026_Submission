@@ -78,9 +78,9 @@ export function Sidebar() {
       icon: Award,
       subItems: [
         { name: 'Gamification Hub', href: '/gamification', icon: LayoutDashboard },
-        { name: 'Active Challenges', href: '/gamification/challenges', icon: Award },
-        { name: 'Leaderboards', href: '/gamification/leaderboard', icon: Network },
-        { name: 'Reward Catalog', href: '/gamification/rewards', icon: FileSpreadsheet },
+        { name: 'Active Challenges', href: '/gamification?tab=hub', icon: Award },
+        { name: 'Leaderboards', href: '/gamification?tab=leaderboard', icon: Network },
+        { name: 'Reward Catalog', href: '/gamification?tab=store', icon: FileSpreadsheet },
       ],
     },
     { name: 'Report Builder', href: '/reports', icon: FileSpreadsheet },

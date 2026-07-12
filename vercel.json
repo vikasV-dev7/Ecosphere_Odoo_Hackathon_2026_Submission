@@ -1,4 +1,5 @@
 {
+  "name": "ecosphere",
   "crons": [
     {
       "path": "/api/scores/calculate",

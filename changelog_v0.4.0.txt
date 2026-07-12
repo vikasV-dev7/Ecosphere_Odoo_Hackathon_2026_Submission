@@ -1,0 +1,23 @@
+Milestone v0.4.0 (Gamification Module) - Changelog
+
+1. Backend API Layer (Gamification)
+   - Created `app/api/gamification/challenges/route.ts` (GET, POST) to manage active challenges and employee progress.
+   - Created `app/api/gamification/badges/route.ts` (GET) to list corporate badges and unlock status.
+   - Created `app/api/gamification/rewards/route.ts` (GET) to list available store rewards.
+   - Created `app/api/gamification/rewards/[id]/redeem/route.ts` (POST) for points deduction and redemption tracking.
+
+2. Social Score Integration
+   - Updated `app/api/scores/calculate/route.ts` to implement the dynamic challengeCompletionRate.
+   - The socialScore is now successfully calculated as: `(csrParticipationRate * 0.6) + (challengeCompletionRate * 0.4)`.
+
+3. Frontend Layouts (Gamification Hub)
+   - Created `app/(dashboard)/gamification/page.tsx` with a multi-tab layout:
+     - **Hub Tab**: Implemented standing widgets (Level/XP), hot streak counter, monthly missions grid, badge collection matrix, and personal growth XP chart.
+     - **Store Tab**: Implemented points balance counter, rewards grid (e.g., offset certs, merchandise), and purchase integration.
+     - **Leaderboard Tab**: Implemented global department ranks and individual standings.
+
+4. Configuration & Deployment
+   - Added `"name": "ecosphere"` to `vercel.json` for proper Vercel CLI mapping.
+   - Validated codebase using `npm run build` (TypeScript checks passed).
+   - Successfully deployed to live server `https://ecosphere-steel.vercel.app/gamification?tab=hub` via Vercel CLI.
+   - Code was NOT pushed to GitHub as per strict constraints.

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/use-auth-store';
 import { NotificationBell } from './notification-bell';
 import { usePathname } from 'next/navigation';
@@ -20,6 +21,25 @@ export function Header() {
   const pathname = usePathname();
   const { currentUser, activeRole, switchUserByRole } = useAuthStore();
 
+  // Dynamic user profile stats query
+  const { data: dbUser } = useQuery({
+    queryKey: ['active-employee-profile', currentUser?.email, activeRole],
+    queryFn: async () => {
+      if (!currentUser?.email) return null;
+      const res = await fetch('/api/employees/me', {
+        headers: {
+          'x-user-email': currentUser.email,
+          'x-user-role': activeRole,
+        },
+      });
+      if (!res.ok) throw new Error('Failed to fetch profile');
+      return res.json();
+    },
+    enabled: !!currentUser?.email,
+  });
+
+  const displayUser = dbUser || currentUser;
+
   const getBreadcrumbs = () => {
     const paths = pathname.split('/').filter(Boolean);
     if (paths.length === 0) return ['Overview Dashboard'];
@@ -31,11 +51,7 @@ export function Header() {
 
   const breadcrumbs = getBreadcrumbs();
 
-  const handleRoleChange = (value: string) => {
-    switchUserByRole(value as UserRole);
-  };
-
-  if (!currentUser) return null;
+  if (!currentUser || !displayUser) return null;
 
   return (
     <header className="fixed top-0 right-0 z-10 flex h-16 w-[calc(100%-16rem)] items-center justify-between border-b border-[#e8e3cb]/50 bg-[#fff9e6]/90 px-8 backdrop-blur-md text-[#1e1c11]">
@@ -59,23 +75,23 @@ export function Header() {
           {/* XP */}
           <div className="flex items-center gap-1 rounded-full bg-[#6ea663]/10 px-3 py-1 text-xs font-medium text-[#2e6b27] border border-[#6ea663]/20">
             <Trophy className="h-3.5 w-3.5" />
-            <span>{currentUser.xp.toLocaleString()} XP</span>
+            <span>{displayUser.xp.toLocaleString()} XP</span>
             <span className="text-[9px] text-[#002201] font-extrabold bg-[#6ea663]/30 px-1.5 rounded-full ml-1">
-              Lvl {Math.floor(currentUser.xp / 500) + 1}
+              Lvl {Math.floor(displayUser.xp / 500) + 1}
             </span>
           </div>
 
           {/* Points */}
           <div className="flex items-center gap-1 rounded-full bg-[#cdc89a]/20 px-3 py-1 text-xs font-medium text-[#63603a] border border-[#cdc89a]/40">
             <Coins className="h-3.5 w-3.5" />
-            <span>{currentUser.totalPoints.toLocaleString()} pts</span>
+            <span>{displayUser.totalPoints.toLocaleString()} pts</span>
           </div>
 
           {/* Streak */}
-          {currentUser.streakDays > 0 && (
+          {displayUser.streakDays > 0 && (
             <div className="flex items-center gap-1 rounded-full bg-orange-100 px-3 py-1 text-xs font-medium text-orange-700 border border-orange-200">
               <Flame className="h-3.5 w-3.5 text-orange-600 animate-pulse" />
-              <span>{currentUser.streakDays}d 🔥</span>
+              <span>{displayUser.streakDays}d 🔥</span>
             </div>
           )}
         </div>
@@ -101,13 +117,13 @@ export function Header() {
         {/* User Profile */}
         <div className="flex items-center gap-3">
           <Avatar className="h-9.5 w-9.5 border border-[#e8e3cb]">
-            <AvatarImage src={currentUser.avatar || ''} alt={currentUser.name} />
+            <AvatarImage src={displayUser.avatar || ''} alt={displayUser.name} />
             <AvatarFallback className="bg-[#003a03] text-white font-bold text-xs uppercase">
-              {currentUser.name.split(' ').map((n) => n[0]).join('')}
+              {displayUser.name.split(' ').map((n: string) => n[0]).join('')}
             </AvatarFallback>
           </Avatar>
           <div className="hidden text-left md:block">
-            <p className="text-xs font-semibold text-[#003a03]">{currentUser.name}</p>
+            <p className="text-xs font-semibold text-[#003a03]">{displayUser.name}</p>
             <span className="block text-[9px] text-[#72796d] font-bold uppercase tracking-wider">
               {activeRole === 'DepartmentHead' ? 'Dept Head' : activeRole}
             </span>

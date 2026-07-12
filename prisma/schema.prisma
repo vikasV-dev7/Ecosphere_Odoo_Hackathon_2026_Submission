@@ -1,0 +1,248 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  Admin
+  DepartmentHead
+  Employee
+}
+
+model Department {
+  id            String              @id @default(uuid())
+  name          String
+  code          String              @unique
+  head          String              // Email of the department head
+  parentId      String?
+  status        String              @default("Active") // Active, Inactive
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  employees     Employee[]
+  transactions  CarbonTransaction[]
+  goals         Goal[]
+}
+
+model Employee {
+  id                     String                   @id @default(uuid())
+  email                  String                   @unique
+  name                   String
+  role                   UserRole                 @default(Employee)
+  departmentId           String
+  xp                     Int                      @default(0)
+  totalPoints            Int                      @default(0)
+  streakDays             Int                      @default(0)
+  avatar                 String?
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+  department             Department               @relation(fields: [departmentId], references: [id])
+  csrParticipations      EmployeeParticipation[]
+  challengeParticipations ChallengeParticipation[]
+  badges                 EmployeeBadge[]
+  redemptions            RewardRedemption[]
+}
+
+model Category {
+  id            String         @id @default(uuid())
+  name          String
+  type          String         // CSR_Activity, Challenge, Emission_Category
+  status        String         @default("Active")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  csrActivities CSRActivity[]
+  challenges    Challenge[]
+}
+
+model EmissionFactor {
+  id           String              @id @default(uuid())
+  name         String
+  category     String              // Purchase, Manufacturing, Expense, Fleet
+  unit         String
+  factorValue  Float
+  description  String?
+  status       String              @default("Active")
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  transactions CarbonTransaction[]
+}
+
+model CarbonTransaction {
+  id               String         @id @default(uuid())
+  departmentId     String
+  emissionFactorId String
+  sourceType       String         // Purchase, Manufacturing, Expense, Fleet
+  sourceId         String?
+  quantity         Float
+  totalEmissions   Float
+  date             DateTime       @default(now())
+  autoCalculated   Boolean        @default(true)
+  notes            String?
+  createdAt        DateTime       @default(now())
+  department       Department     @relation(fields: [departmentId], references: [id])
+  emissionFactor   EmissionFactor @relation(fields: [emissionFactorId], references: [id])
+}
+
+model Goal {
+  id           String      @id @default(uuid())
+  name         String
+  description  String
+  targetValue  Float
+  currentValue Float       @default(0)
+  unit         String
+  deadline     DateTime
+  departmentId String?
+  status       String      @default("Active") // Active, Completed, Overdue
+  imageData    String?     @db.Text           // base64 image data for offset verification
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  department   Department? @relation(fields: [departmentId], references: [id])
+}
+
+model CSRActivity {
+  id              String                  @id @default(uuid())
+  title           String
+  categoryId      String
+  description     String
+  date            DateTime
+  location        String?
+  maxParticipants Int
+  xpReward        Int
+  pointsReward    Int
+  status          String                  @default("Upcoming") // Upcoming, Active, Completed, Cancelled
+  proofRequired   Boolean                 @default(true)
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  category        Category                @relation(fields: [categoryId], references: [id])
+  participations  EmployeeParticipation[]
+}
+
+model EmployeeParticipation {
+  id             String      @id @default(uuid())
+  employeeId     String
+  activityId     String
+  proof          String?
+  proofData      String?     @db.Text
+  approvalStatus String      @default("Pending") // Pending, Approved, Rejected
+  pointsEarned   Int         @default(0)
+  xpEarned       Int         @default(0)
+  completionDate DateTime?
+  createdAt      DateTime    @default(now())
+  employee       Employee    @relation(fields: [employeeId], references: [id])
+  activity       CSRActivity @relation(fields: [activityId], references: [id])
+}
+
+model Challenge {
+  id               String                   @id @default(uuid())
+  title            String
+  categoryId       String
+  description      String
+  xpReward         Int
+  difficulty       String                   @default("Easy") // Easy, Medium, Hard
+  evidenceRequired Boolean                  @default(true)
+  deadline         DateTime?
+  status           String                   @default("Active") // Draft, Active, Completed, Archived
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  category         Category                 @relation(fields: [categoryId], references: [id])
+  participations   ChallengeParticipation[]
+}
+
+model ChallengeParticipation {
+  id             String    @id @default(uuid())
+  challengeId    String
+  employeeId     String
+  progress       Float     @default(0)
+  proof          String?
+  proofData      String?   @db.Text
+  approvalStatus String    @default("InProgress") // InProgress, Submitted, Approved, Rejected
+  xpAwarded      Int       @default(0)
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  challenge      Challenge @relation(fields: [challengeId], references: [id])
+  employee       Employee  @relation(fields: [employeeId], references: [id])
+}
+
+model Badge {
+  id          String          @id @default(uuid())
+  name        String
+  description String
+  ruleType    String          // xp_threshold, challenges_completed, streak_days
+  ruleValue   Int
+  icon        String
+  xpBonus     Int
+  createdAt   DateTime        @default(now())
+  employees   EmployeeBadge[]
+}
+
+model EmployeeBadge {
+  id         String   @id @default(uuid())
+  employeeId String
+  badgeId    String
+  unlockedAt DateTime @default(now())
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  badge      Badge    @relation(fields: [badgeId], references: [id])
+}
+
+model Reward {
+  id             String             @id @default(uuid())
+  name           String
+  description    String
+  pointsRequired Int
+  stock          Int
+  status         String             @default("Active")
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  redemptions    RewardRedemption[]
+}
+
+model RewardRedemption {
+  id         String   @id @default(uuid())
+  employeeId String
+  rewardId   String
+  pointsSpent Int
+  redeemedAt DateTime @default(now())
+  status     String   @default("Pending") // Pending, Fulfilled, Cancelled
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  reward     Reward   @relation(fields: [rewardId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String   // badge_unlock, compliance_issue, csr_approval, policy_reminder
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  data      String?  @db.Text // JSON metadata
+  createdAt DateTime @default(now())
+}
+
+model ESGConfig {
+  id                 String  @id @default("singleton")
+  orgName            String  @default("EcoSphere Corp")
+  envWeight          Float   @default(0.4)
+  socialWeight       Float   @default(0.3)
+  govWeight          Float   @default(0.3)
+  autoEmissionCalc   Boolean @default(true)
+  evidenceRequired   Boolean @default(true)
+  autoBadgeAward     Boolean @default(true)
+  pushNotifications  Boolean @default(true)
+  emailNotifications Boolean @default(true)
+}
+
+model DepartmentScore {
+  id                 String   @id @default(uuid())
+  departmentId       String
+  period             String   // YYYY-MM
+  environmentalScore Float    @default(0)
+  socialScore        Float    @default(0)
+  governanceScore    Float    @default(0)
+  totalScore         Float    @default(0)
+  carbonTotal        Float    @default(0)
+  createdAt          DateTime @default(now())
+}
